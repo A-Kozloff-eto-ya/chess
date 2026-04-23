@@ -33,8 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import DOMPurify from 'dompurify'
-
 const props = defineProps<{
   messages: { from: string; message: string; mine: boolean }[]
   disabled?: boolean
@@ -46,7 +44,7 @@ const input = ref('')
 const expanded = ref(true)
 const messagesEl = ref<HTMLElement | null>(null)
 
-const sanitized = (text: string) => DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+const sanitized = (text: string) => text.replace(/<[^>]*>/g, '')
 
 const send = () => {
   const text = input.value.trim()

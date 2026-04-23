@@ -17,7 +17,6 @@
     "@nuxt/ui": "^4.6.1",
     "@nuxthub/core": "^0.10.7",
     "chess.js": "^1.4.0",
-    "dompurify": "^3.4.1",
     "drizzle-orm": "^0.45.2",
     "nodemailer": "^8.0.5",
     "nuxt": "^4.4.2",
@@ -31,7 +30,6 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.4.4",
-    "@types/dompurify": "^3.0.5",
     "@types/nodemailer": "^8.0.0",
     "drizzle-kit": "^0.31.10",
     "vitest": "^4.1.4"
