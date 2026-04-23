@@ -10,18 +10,18 @@
         <div class="flex flex-col justify-center min-w-0">
           <div class="flex items-center gap-2">
             <h1 class="text-2xl font-bold">{{ profile.username }}</h1>
-            <span v-if="isProfileOnline" class="text-xs font-medium text-green-400">Online</span>
-            <span v-else-if="isProfileOffline" class="text-xs font-medium text-gray-500">Offline</span>
+            <span v-if="isProfileOnline" class="text-xs font-medium text-green-400">{{ $t('online') }}</span>
+            <span v-else-if="isProfileOffline" class="text-xs font-medium text-gray-500">{{ $t('offline') }}</span>
           </div>
           <p class="text-gray-400">
-            Rating: <span class="text-amber-400 font-semibold">{{ profile.rating }}</span>
+            {{ $t('rating') }}: <span class="text-amber-400 font-semibold">{{ profile.rating }}</span>
           </p>
           <p v-if="profile.bio" class="mt-1 text-sm text-gray-300">{{ profile.bio }}</p>
-          <p class="text-sm text-gray-500">Joined {{ formatDate(profile.createdAt) }}</p>
-          <UButton v-if="isOwnProfile && !editing" label="Edit Profile" icon="i-lucide-pencil" size="sm" variant="outline" class="mt-2" @click="startEditing" />
+          <p class="text-sm text-gray-500">{{ $t('joined', { date: formatDate(profile.createdAt) }) }}</p>
+          <UButton v-if="isOwnProfile && !editing" :label="$t('editProfile')" icon="i-lucide-pencil" size="sm" variant="outline" class="mt-2" @click="startEditing" />
           <div v-if="isFriend" class="mt-2">
             <UButton
-              label="Remove friend"
+              :label="$t('removeFriend')"
               icon="i-lucide-user-minus"
               size="sm"
               color="error"
@@ -32,7 +32,7 @@
           </div>
           <div v-else-if="friendRequestSent" class="mt-2">
             <UButton
-              label="Cancel request"
+              :label="$t('cancelRequest')"
               icon="i-lucide-x"
               size="sm"
               variant="ghost"
@@ -57,32 +57,32 @@
 
     <UCard v-if="editing">
       <div class="flex flex-col gap-4">
-        <UFormField label="Username">
+        <UFormField :label="$t('username')">
           <UInput v-model="editForm.username" :max-length="30" />
         </UFormField>
-        <UFormField label="Bio">
+        <UFormField :label="$t('bio')">
           <UTextarea v-model="editForm.bio" :max-length="200" :rows="3" />
         </UFormField>
-        <UFormField label="Avatar">
+        <UFormField :label="$t('avatar')">
           <div class="flex items-center gap-4">
             <UAvatar :src="editForm.avatar || undefined" size="xl" />
-            <UButton label="Upload photo" icon="i-lucide-upload" variant="outline" size="sm" :loading="uploading" @click="avatarInput?.click()" />
+            <UButton :label="$t('uploadPhoto')" icon="i-lucide-upload" variant="outline" size="sm" :loading="uploading" @click="avatarInput?.click()" />
             <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" @change="onAvatarUpload" />
           </div>
         </UFormField>
         <div class="flex gap-2">
-          <UButton label="Save" :loading="saving" @click="saveProfile" />
-          <UButton label="Cancel" variant="ghost" @click="editing = false" />
+          <UButton :label="$t('save')" :loading="saving" @click="saveProfile" />
+          <UButton :label="$t('cancel')" variant="ghost" @click="editing = false" />
         </div>
       </div>
     </UCard>
 
     <UCard>
       <template #header>
-        <span class="font-semibold">Game History</span>
+        <span class="font-semibold">{{ $t('gameHistory') }}</span>
       </template>
       <div v-if="games.length === 0" class="py-4 text-center text-gray-500">
-        No games played yet
+        {{ $t('noGamesPlayed') }}
       </div>
       <div v-else class="flex flex-col gap-2">
         <div
@@ -118,6 +118,7 @@ const route = useRoute()
 const username = route.params.username as string
 const { loggedIn, user } = useUserSession()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { t, locale } = useI18n()
 const toast = useToast()
 const { onFriendshipChange } = useNotifications()
 
@@ -189,7 +190,7 @@ const onAvatarUpload = async (e: Event) => {
   if (!file) return
 
   if (file.size > 2 * 1024 * 1024) {
-    toast.add({ title: 'File too large. Max 2MB', color: 'error' })
+    toast.add({ title: t('fileTooLarge'), color: 'error' })
     return
   }
 
@@ -204,10 +205,10 @@ const onAvatarUpload = async (e: Event) => {
       body: form,
     })
     editForm.avatar = res.avatar
-    toast.add({ title: 'Avatar uploaded!', color: 'success' })
+    toast.add({ title: t('avatarUploaded'), color: 'success' })
   } catch (err) {
     const error = err as FetchError
-    toast.add({ title: error.data?.statusMessage || 'Upload failed', color: 'error' })
+    toast.add({ title: error.data?.statusMessage || t('uploadFailed'), color: 'error' })
   } finally {
     uploading.value = false
   }
@@ -222,22 +223,22 @@ const saveProfile = async () => {
     })
     profile.value = { ...profile.value!, ...updated }
     editing.value = false
-    toast.add({ title: 'Profile updated!', color: 'success' })
+    toast.add({ title: t('profileUpdated'), color: 'success' })
     if (editForm.username !== profile.value!.username) {
       navigateTo(`/profile/${editForm.username}`)
     }
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to update', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToUpdate'), color: 'error' })
   } finally {
     saving.value = false
   }
 }
 
 const friendButtonText = computed(() => {
-  if (isFriend.value) return 'Already friends'
-  if (friendRequestSent.value) return 'Request sent'
-  return 'Add friend'
+  if (isFriend.value) return t('alreadyFriends')
+  if (friendRequestSent.value) return t('requestSent')
+  return t('addFriend')
 })
 
 const friendButtonIcon = computed(() => {
@@ -270,10 +271,10 @@ const sendFriendRequest = async () => {
       body: { userId: profile.value.id },
     })
     friendRequestSent.value = true
-    toast.add({ title: 'Friend request sent!', color: 'success' })
+    toast.add({ title: t('friendRequestSent'), color: 'success' })
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to send request', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToSendRequest'), color: 'error' })
   } finally {
     addingFriend.value = false
   }
@@ -288,10 +289,10 @@ const removeFriend = async () => {
       body: { userId: profile.value.id },
     })
     isFriend.value = false
-    toast.add({ title: `${profile.value.username} removed from friends`, color: 'success' })
+    toast.add({ title: t('removedFromFriends', { username: profile.value.username }), color: 'success' })
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to remove friend', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToRemoveFriend'), color: 'error' })
   } finally {
     removingFriend.value = false
   }
@@ -307,10 +308,10 @@ const cancelRequest = async () => {
     })
     friendRequestSent.value = false
     sentRequestId.value = null
-    toast.add({ title: 'Friend request cancelled', color: 'success' })
+    toast.add({ title: t('friendRequestCancelled'), color: 'success' })
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to cancel request', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToCancelRequest'), color: 'error' })
   } finally {
     cancellingRequest.value = false
   }
@@ -324,7 +325,7 @@ const fetchProfile = async () => {
       profile.value = await $fetch(`/api/users/${username}`)
     }
   } catch {
-    throw createError({ statusCode: 404, statusMessage: 'User not found' })
+    throw createError({ statusCode: 404, statusMessage: t('userNotFound') })
   }
 }
 
@@ -342,7 +343,7 @@ const formatDate = (date: string | null | undefined) => {
   if (!date) return 'N/A'
   const d = new Date(date)
   if (isNaN(d.getTime())) return 'N/A'
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString(locale.value === 'ru' ? 'ru-RU' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -352,9 +353,9 @@ const formatDate = (date: string | null | undefined) => {
 const getResultLabel = (game: ProfileGame) => {
   if (!game.result || game.result === '*') return game.status
   switch (game.result) {
-    case '1-0': return 'White won'
-    case '0-1': return 'Black won'
-    case '1/2-1/2': return 'Draw'
+    case '1-0': return t('whiteWon')
+    case '0-1': return t('blackWon')
+    case '1/2-1/2': return t('draw')
     default: return game.status
   }
 }

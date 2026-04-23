@@ -14,9 +14,9 @@
 
       <template #content>
         <div class="w-72 p-2">
-          <p class="mb-2 px-2 text-sm font-semibold text-gray-300">Friend Requests</p>
+          <p class="mb-2 px-2 text-sm font-semibold text-gray-300">{{ $t('friendRequests') }}</p>
           <div v-if="friendRequests.length === 0" class="px-2 py-4 text-center text-sm text-gray-500">
-            No pending requests
+            {{ $t('noPendingRequests') }}
           </div>
           <div v-else class="flex flex-col gap-1">
             <div
@@ -32,7 +32,7 @@
                 </div>
                 <div>
                   <p class="text-sm font-medium">{{ req.from.username }}</p>
-                  <p class="text-xs text-gray-400">{{ req.from.rating }} ELO</p>
+                  <p class="text-xs text-gray-400">{{ req.from.rating }} {{ $t('eloShort') }}</p>
                 </div>
               </div>
               <div class="flex gap-1">
@@ -53,6 +53,7 @@ import type { FetchError } from '~/../shared/types'
 const { loggedIn } = useUserSession()
 const { friendRequests, pendingCount, acceptRequest, declineRequest, onNotification } = useNotifications()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { t } = useI18n()
 const toast = useToast()
 
 watch(friendRequests, (reqs) => {
@@ -62,12 +63,12 @@ watch(friendRequests, (reqs) => {
 const cleanup = onNotification((msg) => {
   if (msg.type === 'game_invite') {
     toast.add({
-      title: `${msg.from.username} invites you to play!`,
+      title: t('invitesYouToPlay', { username: msg.from.username }),
       color: 'info',
       duration: 15000,
       actions: [
         {
-          label: 'Join',
+          label: t('join'),
           onClick: async () => {
             try {
               await $fetch('/api/games/join', {
@@ -77,7 +78,7 @@ const cleanup = onNotification((msg) => {
               navigateTo(`/play/${msg.gameId}`)
             } catch (e) {
               const err = e as FetchError
-              toast.add({ title: err.data?.statusMessage || 'Failed to join game', color: 'error' })
+              toast.add({ title: err.data?.statusMessage || t('failedToJoinGame'), color: 'error' })
             }
           },
         },
@@ -85,7 +86,7 @@ const cleanup = onNotification((msg) => {
     })
   } else if (msg.type === 'friend_request') {
     toast.add({
-      title: `${msg.from.username} sent you a friend request`,
+      title: t('sentYouFriendRequest', { username: msg.from.username }),
       color: 'info',
       duration: 8000,
     })

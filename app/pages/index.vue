@@ -3,9 +3,9 @@
     <div class="text-center">
       <h1 class="text-4xl font-bold">
         <UIcon name="i-lucide-crown" class="mr-2 text-amber-400" />
-        Chess
+        {{ $t('chess') }}
       </h1>
-      <p class="mt-2 text-gray-400">Play chess with friends, analyze games, improve your skills</p>
+      <p class="mt-2 text-gray-400">{{ $t('playChessDesc') }}</p>
     </div>
 
     <div class="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
@@ -13,41 +13,41 @@
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-bot" class="size-5 text-blue-400" />
-            <span class="font-semibold">Play vs AI</span>
+            <span class="font-semibold">{{ $t('playVsAI') }}</span>
           </div>
         </template>
-        <p class="text-sm text-gray-400">Challenge Stockfish at any ELO level</p>
+        <p class="text-sm text-gray-400">{{ $t('challengeStockfish') }}</p>
       </UCard>
 
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }" @click="loggedIn ? showCreateModal = true : showLoginPrompt()">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-swords" class="size-5 text-green-400" />
-            <span class="font-semibold">Play Online</span>
+            <span class="font-semibold">{{ $t('playOnline') }}</span>
           </div>
         </template>
-        <p class="text-sm text-gray-400">Create a game and invite a friend</p>
-        <UButton v-if="loggedIn" label="Join by Code" icon="i-lucide-key" variant="ghost" size="xs" class="mt-2" @click.stop="showJoinModal = true" />
+        <p class="text-sm text-gray-400">{{ $t('createGameInvite') }}</p>
+        <UButton v-if="loggedIn" :label="$t('joinByCode')" icon="i-lucide-key" variant="ghost" size="xs" class="mt-2" @click.stop="showJoinModal = true" />
       </UCard>
 
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-eye" class="size-5 text-purple-400" />
-            <span class="font-semibold">Watch Games</span>
+            <span class="font-semibold">{{ $t('watchGames') }}</span>
           </div>
         </template>
-        <p class="text-sm text-gray-400">Spectate your friends' live games</p>
+        <p class="text-sm text-gray-400">{{ $t('spectateFriends') }}</p>
       </UCard>
 
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-search" class="size-5 text-amber-400" />
-            <span class="font-semibold">Analyze</span>
+            <span class="font-semibold">{{ $t('analyze') }}</span>
           </div>
         </template>
-        <p class="text-sm text-gray-400">Post-game analysis with Stockfish</p>
+        <p class="text-sm text-gray-400">{{ $t('postGameAnalysis') }}</p>
       </UCard>
     </div>
 
@@ -55,20 +55,20 @@
       <div v-if="loggedIn" class="w-full max-w-2xl">
       <UCard>
         <template #header>
-          <span class="font-semibold">Your Stats</span>
+          <span class="font-semibold">{{ $t('yourStats') }}</span>
         </template>
         <div class="grid grid-cols-3 gap-4 text-center">
           <div>
             <p class="text-2xl font-bold text-amber-400">{{ stats.rating }}</p>
-            <p class="text-sm text-gray-400">Rating</p>
+            <p class="text-sm text-gray-400">{{ $t('rating') }}</p>
           </div>
           <div>
             <p class="text-2xl font-bold text-green-400">{{ stats.gamesPlayed }}</p>
-            <p class="text-sm text-gray-400">Games</p>
+            <p class="text-sm text-gray-400">{{ $t('games') }}</p>
           </div>
           <div>
             <p class="text-2xl font-bold text-blue-400">{{ stats.winRate }}%</p>
-            <p class="text-sm text-gray-400">Win Rate</p>
+            <p class="text-sm text-gray-400">{{ $t('winRate') }}</p>
           </div>
         </div>
       </UCard>
@@ -78,11 +78,11 @@
     <UModal v-model:open="showJoinModal">
       <template #content>
         <div class="p-6">
-          <h2 class="mb-4 text-lg font-semibold">Join Game</h2>
-          <UFormField label="Enter game code">
+          <h2 class="mb-4 text-lg font-semibold">{{ $t('joinGame') }}</h2>
+          <UFormField :label="$t('enterGameCode')">
             <div class="flex gap-2">
               <UInput v-model="joinCode" placeholder="ABC123" class="uppercase" :max-length="6" @keyup.enter="joinByCode" />
-              <UButton label="Join" :disabled="joinCode.length < 6" :loading="joining" @click="joinByCode" />
+              <UButton :label="$t('join')" :disabled="joinCode.length < 6" :loading="joining" @click="joinByCode" />
             </div>
           </UFormField>
         </div>
@@ -92,8 +92,8 @@
     <UModal v-model:open="showCreateModal">
       <template #content>
         <div class="p-6">
-          <h2 class="mb-4 text-lg font-semibold">Create Game</h2>
-          <p class="mb-3 text-sm text-gray-400">Choose time control:</p>
+          <h2 class="mb-4 text-lg font-semibold">{{ $t('createGame') }}</h2>
+          <p class="mb-3 text-sm text-gray-400">{{ $t('chooseTimeControl') }}</p>
           <div class="mb-3 flex gap-2">
             <button
               v-for="cat in timeControlCategories"
@@ -102,7 +102,7 @@
               :class="activeCategory === cat.key ? 'bg-amber-400 text-gray-900' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'"
               @click="activeCategory = cat.key"
             >
-              {{ cat.label }}
+              {{ $t(cat.key) }}
             </button>
           </div>
           <div class="mb-4 flex flex-wrap gap-2">
@@ -116,7 +116,7 @@
               {{ tc }}
             </button>
           </div>
-          <p class="mb-3 text-sm text-gray-400">Choose your color:</p>
+          <p class="mb-3 text-sm text-gray-400">{{ $t('chooseYourColor') }}</p>
           <div class="mb-4 flex gap-3">
             <button
               class="flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
@@ -124,7 +124,7 @@
               @click="selectedColor = 'white'"
             >
               <span class="text-4xl">&#9812;</span>
-              <span class="text-sm font-medium">White</span>
+              <span class="text-sm font-medium">{{ $t('white') }}</span>
             </button>
             <button
               class="flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
@@ -132,7 +132,7 @@
               @click="selectedColor = 'black'"
             >
               <span class="text-4xl">&#9818;</span>
-              <span class="text-sm font-medium">Black</span>
+              <span class="text-sm font-medium">{{ $t('black') }}</span>
             </button>
             <button
               class="flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
@@ -140,10 +140,10 @@
               @click="selectedColor = 'random'"
             >
               <UIcon name="i-lucide-shuffle" class="size-8 text-gray-300" />
-              <span class="text-sm font-medium">Random</span>
+              <span class="text-sm font-medium">{{ $t('random') }}</span>
             </button>
           </div>
-          <UButton label="Create Game" class="w-full" :loading="creating" @click="createOnlineGame" />
+          <UButton :label="$t('createGame')" class="w-full" :loading="creating" @click="createOnlineGame" />
         </div>
       </template>
     </UModal>
@@ -151,8 +151,8 @@
     <UModal v-model:open="showAiModal">
       <template #content>
         <div class="p-6">
-          <h2 class="mb-4 text-lg font-semibold">Play vs AI</h2>
-          <p class="mb-3 text-sm text-gray-400">Choose difficulty:</p>
+          <h2 class="mb-4 text-lg font-semibold">{{ $t('playVsAI') }}</h2>
+          <p class="mb-3 text-sm text-gray-400">{{ $t('chooseDifficulty') }}</p>
           <div class="mb-3 flex flex-wrap gap-2">
             <button
               v-for="preset in eloPresets"
@@ -164,7 +164,7 @@
               {{ preset.label }}
             </button>
           </div>
-          <UFormField label="AI ELO">
+          <UFormField :label="$t('aiElo')">
             <USlider v-model="selectedElo" :min="1350" :max="3300" :step="50" />
             <div class="mt-1 flex justify-between text-xs text-gray-400">
               <span>1350</span>
@@ -172,7 +172,7 @@
               <span>3300</span>
             </div>
           </UFormField>
-          <p class="mb-3 mt-4 text-sm text-gray-400">Choose your color:</p>
+          <p class="mb-3 mt-4 text-sm text-gray-400">{{ $t('chooseYourColor') }}</p>
           <div class="mb-4 flex gap-3">
             <button
               class="flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
@@ -180,7 +180,7 @@
               @click="aiColor = 'white'"
             >
               <span class="text-4xl">&#9812;</span>
-              <span class="text-sm font-medium">White</span>
+              <span class="text-sm font-medium">{{ $t('white') }}</span>
             </button>
             <button
               class="flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors"
@@ -188,10 +188,10 @@
               @click="aiColor = 'black'"
             >
               <span class="text-4xl">&#9818;</span>
-              <span class="text-sm font-medium">Black</span>
+              <span class="text-sm font-medium">{{ $t('black') }}</span>
             </button>
           </div>
-          <UButton label="Start Game" class="w-full" @click="startAiGame" />
+          <UButton :label="$t('startGame')" class="w-full" @click="startAiGame" />
         </div>
       </template>
     </UModal>
@@ -203,6 +203,7 @@ import type { FetchError } from '~/../shared/types'
 import { TIME_CONTROL_CATEGORIES, DEFAULT_TIME_CONTROL } from '~/../shared/constants'
 
 const { loggedIn, user } = useUserSession()
+const { t } = useI18n()
 const toast = useToast()
 
   const stats = reactive({
@@ -234,7 +235,7 @@ const createOnlineGame = async () => {
     navigateTo(`/play/${data.gameId}`)
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to create game', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToCreateGame'), color: 'error' })
   } finally {
     creating.value = false
   }
@@ -252,14 +253,14 @@ const creating = ref(false)
 const joinCode = ref('')
 const joining = ref(false)
 
-const eloPresets = [
-  { label: 'Beginner (1350)', value: 1350 },
-  { label: 'Casual (1500)', value: 1500 },
-  { label: 'Club (1800)', value: 1800 },
-  { label: 'Expert (2200)', value: 2200 },
-  { label: 'Master (2700)', value: 2700 },
-  { label: 'Super GM (3300)', value: 3300 },
-]
+const eloPresets = computed(() => [
+  { label: t('beginner', { elo: 1350 }), value: 1350 },
+  { label: t('casual', { elo: 1500 }), value: 1500 },
+  { label: t('club', { elo: 1800 }), value: 1800 },
+  { label: t('expert', { elo: 2200 }), value: 2200 },
+  { label: t('master', { elo: 2700 }), value: 2700 },
+  { label: t('superGM', { elo: 3300 }), value: 3300 },
+])
 
 const startAiGame = () => {
   showAiModal.value = false
@@ -283,13 +284,13 @@ const joinByCode = async () => {
     navigateTo(`/play/${gameId}`)
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to join', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToJoin'), color: 'error' })
   } finally {
     joining.value = false
   }
 }
 
 const showLoginPrompt = () => {
-  toast.add({ title: 'Please sign in first', color: 'info' })
+  toast.add({ title: t('pleaseSignIn'), color: 'info' })
 }
 </script>

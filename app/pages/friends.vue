@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-6">
-    <h1 class="text-2xl font-bold">Friends</h1>
+    <h1 class="text-2xl font-bold">{{ $t('friends') }}</h1>
 
     <div v-if="loading" class="flex justify-center py-10">
       <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-gray-400" />
@@ -9,8 +9,8 @@
     <template v-else>
       <div v-if="friends.length === 0" class="py-10 text-center text-gray-500">
         <UIcon name="i-lucide-users" class="mx-auto mb-3 size-12 text-gray-600" />
-        <p>No friends yet</p>
-        <p class="mt-1 text-sm">Search for players and send friend requests!</p>
+        <p>{{ $t('noFriendsYet') }}</p>
+        <p class="mt-1 text-sm">{{ $t('searchForPlayers') }}</p>
       </div>
 
       <div v-else class="flex flex-col gap-2">
@@ -27,9 +27,9 @@
             </div>
             <div>
               <p class="font-medium">{{ friend.username }}</p>
-              <p v-if="isOnline(friend.id)" class="text-xs text-green-400">Online</p>
-              <p v-else-if="getStatus(friend.id)?.lastSeenAt" class="text-xs text-gray-500">Last seen {{ formatLastSeen(getStatus(friend.id)!.lastSeenAt!) }}</p>
-              <p class="text-xs text-gray-400">{{ friend.rating }} ELO</p>
+              <p v-if="isOnline(friend.id)" class="text-xs text-green-400">{{ $t('online') }}</p>
+              <p v-else-if="getStatus(friend.id)?.lastSeenAt" class="text-xs text-gray-500">{{ $t('lastSeen', { time: formatLastSeen(getStatus(friend.id)!.lastSeenAt!) }) }}</p>
+              <p class="text-xs text-gray-400">{{ friend.rating }} {{ $t('eloShort') }}</p>
             </div>
           </NuxtLink>
           <UButton
@@ -51,22 +51,23 @@ import type { UserInfo, FriendsResponse, FetchError } from '~/../shared/types'
 
 const { loggedIn } = useUserSession()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { t } = useI18n()
 const toast = useToast()
-
-const formatLastSeen = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 const friends = ref<UserInfo[]>([])
 const loading = ref(true)
 const removingId = ref<number | null>(null)
+
+const formatLastSeen = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return t('justNow')
+  if (mins < 60) return t('minutesAgo', { n: mins })
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return t('hoursAgo', { n: hours })
+  const days = Math.floor(hours / 24)
+  return t('daysAgo', { n: days })
+}
 
 const fetchFriends = async () => {
   loading.value = true
@@ -75,7 +76,7 @@ const fetchFriends = async () => {
     friends.value = data.friends
     await fetchOnlineStatus(data.friends.map(f => f.id))
   } catch {
-    toast.add({ title: 'Failed to load friends', color: 'error' })
+    toast.add({ title: t('failedToLoadFriends'), color: 'error' })
   }
   loading.value = false
 }
@@ -88,10 +89,10 @@ const removeFriend = async (friend: UserInfo) => {
       body: { userId: friend.id },
     })
     friends.value = friends.value.filter(f => f.id !== friend.id)
-    toast.add({ title: `${friend.username} removed from friends`, color: 'success' })
+    toast.add({ title: t('removedFromFriends', { username: friend.username }), color: 'success' })
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to remove friend', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToRemoveFriend'), color: 'error' })
   }
   removingId.value = null
 }

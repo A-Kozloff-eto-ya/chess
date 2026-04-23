@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full flex-col">
     <div class="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-2" role="status" aria-label="Move count">
-      <span class="text-sm font-medium text-gray-300">Moves</span>
+      <span class="text-sm font-medium text-gray-300">{{ $t('moves') }}</span>
       <span class="text-sm text-gray-500">{{ moves.length }}</span>
     </div>
 
@@ -12,7 +12,7 @@
       aria-label="Move history"
     >
       <div v-if="moves.length === 0" class="py-4 text-center text-sm text-gray-500">
-        No moves yet
+        {{ $t('noMovesYet') }}
       </div>
       <table v-else class="w-full text-sm">
         <tbody>

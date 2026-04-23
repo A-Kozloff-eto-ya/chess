@@ -2,31 +2,31 @@
   <UModal v-model:open="open">
     <template #content>
       <div class="p-6">
-        <h2 class="mb-4 text-lg font-semibold">Invite a Friend</h2>
+        <h2 class="mb-4 text-lg font-semibold">{{ $t('inviteAFriend') }}</h2>
 
         <div class="mb-4 rounded-lg bg-gray-800 p-3 text-center">
-          <p class="mb-1 text-xs text-gray-400">Game Code</p>
+          <p class="mb-1 text-xs text-gray-400">{{ $t('gameCode') }}</p>
           <div class="flex items-center justify-center gap-2">
             <code class="text-2xl font-bold tracking-widest text-amber-400">{{ inviteCode }}</code>
             <UButton icon="i-lucide-copy" size="xs" variant="ghost" @click="copyCode" />
           </div>
         </div>
 
-        <UFormField label="Enter friend's code">
+        <UFormField :label="$t('enterFriendsCode')">
           <div class="flex gap-2">
             <UInput v-model="searchCode" placeholder="ABC123" class="uppercase" :max-length="6" @keyup.enter="joinByCode" />
-            <UButton label="Join" :disabled="searchCode.length < 6" :loading="joining" @click="joinByCode" />
+            <UButton :label="$t('join')" :disabled="searchCode.length < 6" :loading="joining" @click="joinByCode" />
           </div>
         </UFormField>
 
         <div class="divider my-4 flex items-center gap-3">
           <div class="h-px flex-1 bg-gray-700"></div>
-          <span class="text-xs text-gray-500">or invite a friend</span>
+          <span class="text-xs text-gray-500">{{ $t('orInviteAFriend') }}</span>
           <div class="h-px flex-1 bg-gray-700"></div>
         </div>
 
-        <div v-if="loadingFriends" class="py-4 text-center text-gray-400">Loading friends...</div>
-        <div v-else-if="friends.length === 0" class="py-4 text-center text-sm text-gray-500">No friends yet</div>
+        <div v-if="loadingFriends" class="py-4 text-center text-gray-400">{{ $t('loadingFriends') }}</div>
+        <div v-else-if="friends.length === 0" class="py-4 text-center text-sm text-gray-500">{{ $t('noFriendsYet') }}</div>
         <div v-else class="flex flex-col gap-2 max-h-48 overflow-y-auto">
           <div
             v-for="friend in friends"
@@ -41,11 +41,11 @@
               </div>
               <div>
                 <p class="text-sm font-medium">{{ friend.username }}</p>
-                <p class="text-xs text-gray-400">{{ friend.rating }} ELO</p>
+                <p class="text-xs text-gray-400">{{ friend.rating }} {{ $t('eloShort') }}</p>
               </div>
             </div>
             <UButton
-              label="Invite"
+              :label="$t('invite')"
               size="xs"
               variant="outline"
               :disabled="invitingId === friend.id"
@@ -63,6 +63,7 @@ import type { UserInfo, FriendsResponse, FetchError } from '~/../shared/types'
 
 const props = defineProps<{ open: boolean; gameId: string; inviteCode: string }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
+const { t } = useI18n()
 const toast = useToast()
 const { sendGameInvite } = useNotifications()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
@@ -80,7 +81,7 @@ const invitingId = ref<number | null>(null)
 
 const copyCode = () => {
   navigator.clipboard.writeText(props.inviteCode)
-  toast.add({ title: 'Code copied!', color: 'success' })
+  toast.add({ title: t('codeCopied'), color: 'success' })
 }
 
 const joinByCode = async () => {
@@ -95,7 +96,7 @@ const joinByCode = async () => {
     navigateTo(`/play/${gameId}`)
   } catch (e) {
     const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || 'Failed to join', color: 'error' })
+    toast.add({ title: err.data?.statusMessage || t('failedToJoin'), color: 'error' })
   } finally {
     joining.value = false
   }
@@ -105,9 +106,9 @@ const inviteFriend = async (friend: UserInfo) => {
   invitingId.value = friend.id
   try {
     sendGameInvite(friend.id, props.gameId, props.inviteCode)
-    toast.add({ title: `Invite sent to ${friend.username}!`, color: 'success' })
+    toast.add({ title: t('inviteSentTo', { username: friend.username }), color: 'success' })
   } catch {
-    toast.add({ title: `Code: ${props.inviteCode} — send it to ${friend.username}`, color: 'info' })
+    toast.add({ title: t('codeSendTo', { code: props.inviteCode, username: friend.username }), color: 'info' })
   }
   invitingId.value = null
 }

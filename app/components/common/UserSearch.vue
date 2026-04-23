@@ -3,7 +3,7 @@
     <UInput
       v-model="query"
       icon="i-lucide-search"
-      placeholder="Search players..."
+      :placeholder="$t('searchPlayers')"
       size="sm"
       class="w-48"
       aria-label="Search players"
@@ -16,10 +16,10 @@
       class="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-gray-700 bg-gray-900 shadow-xl"
     >
       <div v-if="loading" class="px-3 py-4 text-center text-sm text-gray-500">
-        Searching...
+        {{ $t('searching') }}
       </div>
       <div v-else-if="results.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
-        No players found
+        {{ $t('noPlayersFound') }}
       </div>
       <div v-else class="flex flex-col py-1">
         <NuxtLink

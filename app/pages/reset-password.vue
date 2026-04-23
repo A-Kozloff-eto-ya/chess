@@ -2,29 +2,29 @@
   <div class="flex min-h-[60vh] items-center justify-center">
     <UCard class="w-full max-w-md">
       <template #header>
-        <h1 class="text-xl font-bold">Reset Password</h1>
+        <h1 class="text-xl font-bold">{{ $t('resetPassword') }}</h1>
       </template>
 
       <div v-if="success" class="text-center py-4">
         <UIcon name="i-lucide-check-circle" class="size-12 text-green-400 mb-3 mx-auto" />
-        <p class="text-gray-300">Password has been reset successfully.</p>
-        <UButton label="Sign in" class="mt-4" @click="navigateTo('/')" />
+        <p class="text-gray-300">{{ $t('passwordResetSuccess') }}</p>
+        <UButton :label="$t('signIn')" class="mt-4" @click="navigateTo('/')" />
       </div>
 
       <div v-else-if="invalidToken" class="text-center py-4">
         <UIcon name="i-lucide-x-circle" class="size-12 text-red-400 mb-3 mx-auto" />
-        <p class="text-gray-300">This reset link is invalid or has expired.</p>
-        <UButton label="Request new link" variant="outline" class="mt-4" @click="navigateTo('/forgot-password')" />
+        <p class="text-gray-300">{{ $t('invalidResetLink') }}</p>
+        <UButton :label="$t('requestNewLink')" variant="outline" class="mt-4" @click="navigateTo('/forgot-password')" />
       </div>
 
       <UForm v-else :state="form" @submit="onSubmit">
-        <UFormField label="New Password" name="password">
-          <UInput v-model="form.password" type="password" placeholder="Min 8 characters" />
+        <UFormField :label="$t('newPassword')" name="password">
+          <UInput v-model="form.password" type="password" :placeholder="$t('min8Chars')" />
         </UFormField>
-        <UFormField label="Confirm Password" name="confirmPassword" class="mt-3">
+        <UFormField :label="$t('confirmPassword')" name="confirmPassword" class="mt-3">
           <UInput v-model="form.confirmPassword" type="password" />
         </UFormField>
-        <UButton type="submit" label="Reset Password" class="mt-4 w-full" :loading="loading" />
+        <UButton type="submit" :label="$t('resetPassword')" class="mt-4 w-full" :loading="loading" />
       </UForm>
     </UCard>
   </div>
@@ -34,6 +34,7 @@
 import type { FetchError } from '~/../shared/types'
 
 const route = useRoute()
+const { t } = useI18n()
 const toast = useToast()
 const loading = ref(false)
 const success = ref(false)
@@ -48,7 +49,7 @@ if (!token) {
 
 const onSubmit = async () => {
   if (form.password !== form.confirmPassword) {
-    toast.add({ title: 'Passwords do not match', color: 'error' })
+    toast.add({ title: t('passwordsDoNotMatch'), color: 'error' })
     return
   }
 
@@ -59,13 +60,13 @@ const onSubmit = async () => {
       body: { token, password: form.password },
     })
     success.value = true
-    toast.add({ title: 'Password reset!', color: 'success' })
+    toast.add({ title: t('passwordReset'), color: 'success' })
   } catch (e) {
     const err = e as FetchError
     if (err.data?.statusCode === 400) {
       invalidToken.value = true
     } else {
-      toast.add({ title: err.data?.statusMessage || 'Failed to reset password', color: 'error' })
+      toast.add({ title: err.data?.statusMessage || t('failedToResetPassword'), color: 'error' })
     }
   } finally {
     loading.value = false

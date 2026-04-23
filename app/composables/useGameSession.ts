@@ -16,6 +16,7 @@ export interface GameResponse {
 
 export function useGameSession(gameId: string) {
   const { user, fetch: fetchSession } = useUserSession()
+  const { t } = useI18n()
   const toast = useToast()
   const { joinGame, sendMove, resign, offerDraw, acceptDraw, abortGame, offerRematch, acceptRematch, declineRematch, sendChat, leaveGame, onMessage } = useChessWebSocket()
   const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
@@ -76,13 +77,13 @@ export function useGameSession(gameId: string) {
   })
 
   const gameOverText = computed(() => {
-    if (!gameData.value?.result) return 'Game Over'
+    if (!gameData.value?.result) return t('gameOver')
     switch (gameData.value.result) {
-      case '1-0': return 'White wins!'
-      case '0-1': return 'Black wins!'
-      case '1/2-1/2': return 'Draw!'
-      case '*': return 'Game aborted'
-      default: return 'Game Over'
+      case '1-0': return t('whiteWins')
+      case '0-1': return t('blackWins')
+      case '1/2-1/2': return t('drawGame')
+      case '*': return t('gameAborted')
+      default: return t('gameOver')
     }
   })
 
@@ -134,7 +135,7 @@ export function useGameSession(gameId: string) {
       const tc = parseTimeControl(data.timeControl || '10+0')
       resetClock(tc.base)
     } catch {
-      toast.add({ title: 'Game not found', color: 'error' })
+      toast.add({ title: t('gameNotFound'), color: 'error' })
       navigateTo('/')
     }
   }
@@ -185,7 +186,7 @@ export function useGameSession(gameId: string) {
           gameData.value = { ...gameData.value!, whitePlayer: msg.opponent }
         }
         startTimer(activeTurn)
-        toast.add({ title: `${msg.opponent.username} joined!`, color: 'success' })
+        toast.add({ title: t('joinedGame', { username: msg.opponent.username }), color: 'success' })
         break
 
       case 'state_update':
@@ -232,14 +233,14 @@ export function useGameSession(gameId: string) {
         break
 
       case 'draw_offered':
-        toast.add({ title: `Draw offered by ${msg.by}`, color: 'info', actions: [{
-          label: 'Accept',
+        toast.add({ title: t('drawOfferedBy', { username: msg.by }), color: 'info', actions: [{
+          label: t('accept'),
           onClick: () => acceptDraw(gameId),
         }]})
         break
 
       case 'opponent_disconnected':
-        toast.add({ title: 'Opponent disconnected', color: 'warning' })
+        toast.add({ title: t('opponentDisconnected'), color: 'warning' })
         break
 
       case 'rematch_offered':

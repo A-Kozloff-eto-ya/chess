@@ -9,7 +9,7 @@
             <span v-else-if="opponentInfo && getStatus(opponentInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
           <div>
-            <p class="font-semibold">{{ opponentInfo?.username || (isWaiting ? 'Waiting for opponent...' : 'Opponent') }}</p>
+            <p class="font-semibold">{{ opponentInfo?.username || (isWaiting ? $t('waitingForOpponent') : $t('opponent')) }}</p>
             <p class="text-sm text-gray-400">{{ opponentInfo?.rating || '???' }}</p>
           </div>
         </div>
@@ -44,7 +44,7 @@
             <span v-else-if="playerInfo && getStatus(playerInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
           <div>
-            <p class="font-semibold">{{ playerInfo?.username || 'You' }}</p>
+            <p class="font-semibold">{{ playerInfo?.username || $t('you') }}</p>
             <p class="text-sm text-gray-400">{{ playerInfo?.rating || '???' }}</p>
           </div>
         </div>
@@ -57,18 +57,18 @@
     <div class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
       <div v-if="isWaiting" class="rounded-lg border border-dashed border-gray-600 p-6 text-center">
         <UIcon name="i-lucide-loader-2" class="mx-auto mb-3 size-8 animate-spin text-gray-400" />
-        <p class="font-semibold">Waiting for opponent</p>
-        <p class="mt-2 text-sm text-gray-400">Share this code:</p>
+        <p class="font-semibold">{{ $t('waitingForOpponentTitle') }}</p>
+        <p class="mt-2 text-sm text-gray-400">{{ $t('shareThisCode') }}</p>
         <div class="mt-2 flex items-center justify-center gap-2">
           <code class="rounded bg-gray-800 px-3 py-1.5 text-xl font-bold tracking-widest text-amber-400">{{ inviteCode }}</code>
           <UButton icon="i-lucide-copy" size="sm" variant="ghost" aria-label="Copy invite code" @click="copyInviteCode" />
         </div>
-        <p class="mt-3 text-xs text-gray-500">Or invite a friend:</p>
-        <UButton label="Invite Friend" icon="i-lucide-user-plus" variant="outline" size="sm" class="mt-2" @click="showInviteModal = true" />
+        <p class="mt-3 text-xs text-gray-500">{{ $t('orInviteFriend') }}</p>
+        <UButton :label="$t('inviteFriend')" icon="i-lucide-user-plus" variant="outline" size="sm" class="mt-2" @click="showInviteModal = true" />
       </div>
 
       <div v-if="!isWaiting && !gameOver" class="text-center text-sm font-medium" :class="isMyTurn ? 'text-green-400' : 'text-gray-400'" role="status">
-        {{ isMyTurn ? 'Your turn' : "Opponent's turn" }}
+        {{ isMyTurn ? $t('yourTurn') : $t('opponentsTurn') }}
       </div>
 
       <GameMoveHistory :moves="moves" />
@@ -85,24 +85,24 @@
         <p class="text-lg font-bold">{{ gameOverText }}</p>
         <div class="mt-3 flex flex-col gap-2">
           <div v-if="!rematchOfferSent && !rematchOfferReceived && !rematchDeclined" class="flex gap-2">
-            <UButton label="Rematch" icon="i-lucide-refresh-cw" class="flex-1" @click="offerRematch" />
-            <UButton label="New Game" variant="outline" class="flex-1" @click="navigateTo('/')" />
+            <UButton :label="$t('rematch')" icon="i-lucide-refresh-cw" class="flex-1" @click="offerRematch" />
+            <UButton :label="$t('newGame')" variant="outline" class="flex-1" @click="navigateTo('/')" />
           </div>
           <div v-if="rematchOfferSent && !rematchDeclined" class="text-sm text-gray-400">
             <UIcon name="i-lucide-loader-2" class="mr-1 inline-block animate-spin" />
-            Rematch offered, waiting for opponent...
+            {{ $t('rematchOffered') }}
           </div>
           <div v-if="rematchDeclined" class="text-sm text-red-400">
-            Rematch declined
+            {{ $t('rematchDeclined') }}
           </div>
           <div v-if="rematchOfferReceived" class="flex flex-col gap-2">
-            <p class="text-sm text-amber-400">Opponent wants a rematch!</p>
+            <p class="text-sm text-amber-400">{{ $t('opponentWantsRematch') }}</p>
             <div class="flex gap-2">
-              <UButton label="Accept" color="success" class="flex-1" @click="acceptRematch" />
-              <UButton label="Decline" variant="outline" class="flex-1" @click="declineRematch" />
+              <UButton :label="$t('accept')" color="success" class="flex-1" @click="acceptRematch" />
+              <UButton :label="$t('decline')" variant="outline" class="flex-1" @click="declineRematch" />
             </div>
           </div>
-          <UButton v-if="rematchOfferSent || rematchDeclined" label="New Game" variant="outline" class="w-full" @click="navigateTo('/')" />
+          <UButton v-if="rematchOfferSent || rematchDeclined" :label="$t('newGame')" variant="outline" class="w-full" @click="navigateTo('/')" />
         </div>
       </div>
     </div>
@@ -122,6 +122,7 @@ import 'vue3-chessboard/style.css'
 
 const route = useRoute()
 const gameId = route.params.id as string
+const { t } = useI18n()
 const toast = useToast()
 const showInviteModal = ref(false)
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
@@ -171,7 +172,7 @@ watch([playerInfo, opponentInfo], ([p, o]) => {
 
 const copyInviteCode = () => {
   navigator.clipboard.writeText(inviteCode.value)
-  toast.add({ title: 'Invite code copied!', color: 'success' })
+  toast.add({ title: t('inviteCodeCopied'), color: 'success' })
 }
 </script>
 

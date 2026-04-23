@@ -33,13 +33,13 @@
       </div>
 
       <div class="flex gap-2">
-        <UButton label="First" icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move"
+        <UButton :label="$t('first')" icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move"
           @click="goToMove(0)" />
-        <UButton label="Prev" icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move"
+        <UButton :label="$t('prev')" icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move"
           @click="goToMove(currentMoveIndex - 1)" />
-        <UButton label="Next" icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move"
+        <UButton :label="$t('next')" icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move"
           @click="goToMove(currentMoveIndex + 1)" />
-        <UButton label="Last" icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move"
+        <UButton :label="$t('last')" icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move"
           @click="goToMove(moves.length)" />
       </div>
     </div>

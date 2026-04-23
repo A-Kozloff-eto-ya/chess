@@ -4,8 +4,8 @@
       <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-bot" class="size-5 text-blue-400" />
-          <span class="font-semibold">Stockfish AI</span>
-          <span class="text-sm text-gray-400">ELO: {{ engineElo }}</span>
+          <span class="font-semibold">{{ $t('stockfishAI') }}</span>
+          <span class="text-sm text-gray-400">{{ $t('elo', { elo: engineElo }) }}</span>
         </div>
         <div class="font-mono text-lg" role="timer" :aria-label="`AI time: ${formatTime(opponentTime)}`">{{ formatTime(opponentTime) }}</div>
       </div>
@@ -31,7 +31,7 @@
       <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-user" class="size-5 text-green-400" />
-          <span class="font-semibold">You ({{ playerColor === 'white' ? 'White' : 'Black' }})</span>
+          <span class="font-semibold">{{ $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
         </div>
         <div class="font-mono text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
       </div>
@@ -41,18 +41,18 @@
       <GameMoveHistory :moves="moves" />
 
       <div class="flex gap-2">
-        <UButton label="New Game" icon="i-lucide-refresh-cw" variant="outline" class="flex-1" @click="resetGame" />
-        <UButton label="Resign" icon="i-lucide-flag" variant="outline" color="error" class="flex-1" :disabled="gameOver" @click="onResign" />
+        <UButton :label="$t('newGame')" icon="i-lucide-refresh-cw" variant="outline" class="flex-1" @click="resetGame" />
+        <UButton :label="$t('resign')" icon="i-lucide-flag" variant="outline" color="error" class="flex-1" :disabled="gameOver" @click="onResign" />
       </div>
 
       <div v-if="gameOver" class="rounded-lg bg-gray-800 p-4 text-center" role="alert">
         <p class="text-lg font-bold">{{ gameOverText }}</p>
-        <UButton label="Play Again" class="mt-3" @click="resetGame" />
+        <UButton :label="$t('playAgain')" class="mt-3" @click="resetGame" />
       </div>
 
       <div v-if="isAiThinking" class="flex items-center gap-2 text-sm text-gray-400" role="status">
         <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
-        <span>AI is thinking...</span>
+        <span>{{ $t('aiThinking') }}</span>
       </div>
     </div>
   </div>
@@ -69,6 +69,7 @@ import type { EngineBestmoveResponse, EngineEvaluation } from '~/../shared/types
 import { parseTimeControl } from '~/../shared/constants'
 
 const DEFAULT_TC = parseTimeControl('10+0')
+const { t } = useI18n()
 
 const route = useRoute()
 const gameContainer = ref<HTMLElement | null>(null)
@@ -116,11 +117,11 @@ const myTime = computed(() => playerColor.value === 'white' ? whiteTime.value : 
 const opponentTime = computed(() => playerColor.value === 'white' ? blackTime.value : whiteTime.value)
 
 const gameOverText = computed(() => {
-  if (gameOverReason.value === 'checkmate') return 'Checkmate!'
-  if (gameOverReason.value === 'stalemate') return 'Stalemate!'
-  if (gameOverReason.value === 'draw') return 'Draw!'
-  if (gameOverReason.value === 'resign') return 'You resigned'
-  return 'Game Over'
+  if (gameOverReason.value === 'checkmate') return t('checkmate')
+  if (gameOverReason.value === 'stalemate') return t('stalemate')
+  if (gameOverReason.value === 'draw') return t('drawGame')
+  if (gameOverReason.value === 'resign') return t('youResigned')
+  return t('gameOver')
 })
 
 const onBoardCreated = (api: BoardApi) => {
