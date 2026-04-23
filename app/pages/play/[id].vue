@@ -6,7 +6,7 @@
           <div class="relative">
             <UAvatar :src="opponentInfo?.avatar || undefined" size="sm" />
             <span v-if="opponentInfo && isOnline(opponentInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-green-500" />
-            <span v-else-if="opponentInfo && getStatus(opponentInfo.id) === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
+            <span v-else-if="opponentInfo && getStatus(opponentInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
           <div>
             <p class="font-semibold">{{ opponentInfo?.username || (isWaiting ? 'Waiting for opponent...' : 'Opponent') }}</p>
@@ -41,7 +41,7 @@
           <div class="relative">
             <UAvatar :src="playerInfo?.avatar || undefined" size="sm" />
             <span v-if="playerInfo && isOnline(playerInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-green-500" />
-            <span v-else-if="playerInfo && getStatus(playerInfo.id) === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
+            <span v-else-if="playerInfo && getStatus(playerInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
           <div>
             <p class="font-semibold">{{ playerInfo?.username || 'You' }}</p>

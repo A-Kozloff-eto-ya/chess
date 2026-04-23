@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { users } from '../../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, ne } from 'drizzle-orm'
 
 const updateSchema = z.object({
   avatar: z.string().optional(),
@@ -17,7 +17,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: parsed.error.message })
   }
 
-    const updated = await db.update(users)
+  if (parsed.data.username) {
+    const existing = await db.select({ id: users.id }).from(users)
+      .where(eq(users.username, parsed.data.username))
+      .then(r => r[0])
+    if (existing && existing.id !== session.user.id) {
+      throw createError({ statusCode: 409, statusMessage: 'Username already taken' })
+    }
+  }
+
+  const updated = await db.update(users)
     .set(parsed.data)
     .where(eq(users.id, session.user.id))
     .returning()

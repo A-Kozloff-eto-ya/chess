@@ -43,7 +43,7 @@
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-magnifying-glass" class="size-5 text-amber-400" />
+            <UIcon name="i-lucide-search" class="size-5 text-amber-400" />
             <span class="font-semibold">Analyze</span>
           </div>
         </template>
@@ -211,7 +211,8 @@ const toast = useToast()
     winRate: 0,
   })
 
-  if (loggedIn.value) {
+  onMounted(async () => {
+    if (!loggedIn.value) return
     try {
       const data = await $fetch('/api/users/stats')
       stats.rating = data.rating
@@ -220,7 +221,7 @@ const toast = useToast()
     } catch (e) {
       console.error('[Index] Failed to load stats:', e)
     }
-  }
+  })
 
 const createOnlineGame = async () => {
   creating.value = true

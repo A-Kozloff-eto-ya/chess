@@ -16,6 +16,8 @@ export interface GameRoom {
   lastMoveAt: number
   status: 'waiting' | 'active' | 'completed' | 'abandoned'
   peers: Map<number, { send: (data: string) => void }>
+  rematchOfferedBy: number | null
+  rematchAccepted: boolean
 }
 
 const gameRooms = new Map<string, GameRoom>()
@@ -39,6 +41,8 @@ export function createGameRoom(gameId: string, timeControl: string = '10+0'): Ga
     lastMoveAt: Date.now(),
     status: 'waiting',
     peers: new Map(),
+    rematchOfferedBy: null,
+    rematchAccepted: false,
   }
   gameRooms.set(gameId, room)
   return room
@@ -122,6 +126,8 @@ export async function restoreRoomsFromDB(): Promise<void> {
         lastMoveAt: game.lastMoveAt ? new Date(game.lastMoveAt).getTime() : Date.now(),
         status: game.status as GameRoom['status'],
         peers: new Map(),
+        rematchOfferedBy: null,
+        rematchAccepted: false,
       }
 
       if (game.fen && game.fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {

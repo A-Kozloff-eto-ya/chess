@@ -28,7 +28,7 @@
                 <div class="relative">
                   <UAvatar :src="req.from.avatar || undefined" size="xs" />
                   <span v-if="isOnline(req.from.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
-                  <span v-else-if="getStatus(req.from.id) === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
+                  <span v-else-if="getStatus(req.from.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
                 </div>
                 <div>
                   <p class="text-sm font-medium">{{ req.from.username }}</p>

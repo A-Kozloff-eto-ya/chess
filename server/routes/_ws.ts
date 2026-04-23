@@ -399,6 +399,12 @@ export default defineWebSocketHandler({
         if (!room) return
         if (room.status !== 'completed' && room.status !== 'abandoned') return
         if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) return
+        if (room.rematchOfferedBy !== null) {
+          peer.send(JSON.stringify({ type: 'error', message: 'Rematch offer already pending' }))
+          return
+        }
+        if (room.rematchAccepted) return
+        room.rematchOfferedBy = userId
         peer.publish(`game:${gameId}`, JSON.stringify({ type: 'rematch_offered', by: pd.username }))
         break
       }
@@ -409,6 +415,15 @@ export default defineWebSocketHandler({
         if (!room) return
         if (room.status !== 'completed' && room.status !== 'abandoned') return
         if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) return
+        if (room.rematchOfferedBy === null || room.rematchOfferedBy === userId) {
+          peer.send(JSON.stringify({ type: 'error', message: 'No rematch offer to accept' }))
+          return
+        }
+        if (room.rematchAccepted) {
+          peer.send(JSON.stringify({ type: 'error', message: 'Rematch already accepted' }))
+          return
+        }
+        room.rematchAccepted = true
 
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
         let inviteCode = ''
@@ -431,6 +446,8 @@ export default defineWebSocketHandler({
 
         if (!newGame) {
           peer.send(JSON.stringify({ type: 'error', message: 'Failed to create rematch' }))
+          room.rematchAccepted = false
+          room.rematchOfferedBy = null
           break
         }
 
@@ -447,6 +464,11 @@ export default defineWebSocketHandler({
 
       case 'decline_rematch': {
         const gameId = msg.gameId!
+        const room = getGameRoom(gameId)
+        if (room) {
+          room.rematchOfferedBy = null
+          room.rematchAccepted = false
+        }
         peer.publish(`game:${gameId}`, JSON.stringify({ type: 'rematch_declined' }))
         break
       }

@@ -1,18 +1,19 @@
 import { useSharedWebSocket } from './useSharedWebSocket'
 
 export function useOnlineUsers() {
-  const onlineUsers = useState<Map<number, boolean>>('online-users', () => new Map())
+  const onlineUsers = useState<Map<number, { online: boolean; lastSeenAt: string | null }>>('online-users', () => new Map())
 
   const { onMessage } = useSharedWebSocket()
 
   onMessage((msg) => {
     if (msg.type === 'user_online') {
       const next = new Map(onlineUsers.value)
-      next.set(msg.userId, true)
+      next.set(msg.userId, { online: true, lastSeenAt: null })
       onlineUsers.value = next
     } else if (msg.type === 'user_offline') {
       const next = new Map(onlineUsers.value)
-      next.set(msg.userId, false)
+      const existing = next.get(msg.userId)
+      next.set(msg.userId, { online: false, lastSeenAt: existing?.lastSeenAt ?? new Date().toISOString() })
       onlineUsers.value = next
     }
   })
@@ -20,13 +21,13 @@ export function useOnlineUsers() {
   const fetchOnlineStatus = async (userIds: number[]) => {
     if (userIds.length === 0) return
     try {
-      const result = await $fetch<Record<string, boolean>>('/api/users/online-status', {
+      const result = await $fetch<Record<string, { online: boolean; lastSeenAt: string | null }>>('/api/users/online-status', {
         method: 'POST',
         body: { userIds }
       })
       const next = new Map(onlineUsers.value)
-      for (const [id, online] of Object.entries(result)) {
-        next.set(Number(id), online)
+      for (const [id, status] of Object.entries(result)) {
+        next.set(Number(id), status)
       }
       onlineUsers.value = next
     } catch (e) {
@@ -34,7 +35,7 @@ export function useOnlineUsers() {
     }
   }
 
-  const isOnline = (userId: number) => onlineUsers.value.get(userId) === true
+  const isOnline = (userId: number) => onlineUsers.value.get(userId)?.online === true
   const getStatus = (userId: number) => onlineUsers.value.get(userId)
 
   return { onlineUsers: readonly(onlineUsers), isOnline, getStatus, fetchOnlineStatus }

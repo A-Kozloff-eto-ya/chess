@@ -7,7 +7,7 @@
             <UAvatar :src="game.whitePlayer?.avatar || undefined" size="xs" />
             <span v-if="game.whitePlayer && isOnline(game.whitePlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
-            <span v-else-if="game.whitePlayer && getStatus(game.whitePlayer.id) === false"
+            <span v-else-if="game.whitePlayer && getStatus(game.whitePlayer.id)?.online === false"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
           <span class="text-sm">{{ game.whitePlayer?.username }}</span>
@@ -20,7 +20,7 @@
             <UAvatar :src="game.blackPlayer?.avatar || undefined" size="xs" />
             <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
-            <span v-else-if="game.blackPlayer && getStatus(game.blackPlayer.id) === false"
+            <span v-else-if="game.blackPlayer && getStatus(game.blackPlayer.id)?.online === false"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
           </div>
         </div>
@@ -122,7 +122,7 @@ const loadGameIntoBoard = () => {
 
 const fetchGame = async () => {
   try {
-    game.value = await $fetch(`/api/games/${gameId}`)
+    game.value = await $fetch<GameDetail>(`/api/games/${gameId}`)
     if (game.value?.moves?.length) {
       buildPositions(game.value.moves)
       if (boardApi.value) {

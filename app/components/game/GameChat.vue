@@ -14,7 +14,7 @@
           :class="msg.mine ? 'text-right' : 'text-left'"
         >
           <span :class="msg.mine ? 'text-blue-400' : 'text-gray-400'" class="text-xs">{{ msg.from }}:</span>
-          <span class="ml-1 text-gray-200">{{ msg.message }}</span>
+          <span class="ml-1 text-gray-200">{{ sanitized(msg.message) }}</span>
         </div>
       </div>
       <div class="flex gap-2 border-t border-gray-700 p-2">
@@ -33,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
+
 const props = defineProps<{
   messages: { from: string; message: string; mine: boolean }[]
   disabled?: boolean
@@ -43,6 +45,8 @@ const emit = defineEmits<{ send: [message: string] }>()
 const input = ref('')
 const expanded = ref(true)
 const messagesEl = ref<HTMLElement | null>(null)
+
+const sanitized = (text: string) => DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
 
 const send = () => {
   const text = input.value.trim()

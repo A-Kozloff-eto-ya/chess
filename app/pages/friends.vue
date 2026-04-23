@@ -23,10 +23,12 @@
             <div class="relative">
               <UAvatar :src="friend.avatar || undefined" size="sm" />
               <span v-if="isOnline(friend.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-800 bg-green-500" />
-              <span v-else-if="getStatus(friend.id) === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-800 bg-gray-500" />
+              <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-800 bg-gray-500" />
             </div>
             <div>
               <p class="font-medium">{{ friend.username }}</p>
+              <p v-if="isOnline(friend.id)" class="text-xs text-green-400">Online</p>
+              <p v-else-if="getStatus(friend.id)?.lastSeenAt" class="text-xs text-gray-500">Last seen {{ formatLastSeen(getStatus(friend.id)!.lastSeenAt!) }}</p>
               <p class="text-xs text-gray-400">{{ friend.rating }} ELO</p>
             </div>
           </NuxtLink>
@@ -50,6 +52,17 @@ import type { UserInfo, FriendsResponse, FetchError } from '~/../shared/types'
 const { loggedIn } = useUserSession()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 const toast = useToast()
+
+const formatLastSeen = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
 
 const friends = ref<UserInfo[]>([])
 const loading = ref(true)

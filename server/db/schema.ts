@@ -14,6 +14,7 @@ export const users = pgTable('users', {
   rating: integer().default(1200),
   provider: text().default('email'),
   providerId: text(),
+  lastSeenAt: timestamp('lastSeenAt'),
   createdAt: timestamp().notNull().defaultNow(),
 })
 

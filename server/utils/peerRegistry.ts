@@ -1,3 +1,6 @@
+import { users } from '../db/schema'
+import { eq } from 'drizzle-orm'
+
 interface WsPeer {
   send: (data: string) => void
 }
@@ -10,6 +13,10 @@ export function addPeer(userId: number, peer: WsPeer) {
     connectedPeers.set(userId, new Set())
   }
   connectedPeers.get(userId)!.add(peer)
+  if (wasOffline) {
+    db.update(users).set({ lastSeenAt: new Date() }).where(eq(users.id, userId))
+      .catch((e: any) => console.error('[PeerRegistry] Failed to update lastSeenAt:', e.message))
+  }
   return wasOffline
 }
 
@@ -19,6 +26,8 @@ export function removePeer(userId: number, peer: WsPeer) {
     peers.delete(peer)
     if (peers.size === 0) {
       connectedPeers.delete(userId)
+      db.update(users).set({ lastSeenAt: new Date() }).where(eq(users.id, userId))
+        .catch((e: any) => console.error('[PeerRegistry] Failed to update lastSeenAt:', e.message))
       return true
     }
   }

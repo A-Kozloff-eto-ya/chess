@@ -35,7 +35,7 @@
             <p class="text-xs text-gray-400">{{ u.rating }} ELO</p>
           </div>
           <span v-if="isOnline(u.id)" class="ml-auto size-2 rounded-full bg-green-500" />
-          <span v-else-if="getStatus(u.id) === false" class="ml-auto size-2 rounded-full bg-gray-500" />
+          <span v-else-if="getStatus(u.id)?.online === false" class="ml-auto size-2 rounded-full bg-gray-500" />
         </NuxtLink>
       </div>
     </div>

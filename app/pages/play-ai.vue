@@ -38,7 +38,7 @@
     </div>
 
     <div class="flex h-full w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-      <!-- <GameMoveHistory :moves="moves" /> -->
+      <GameMoveHistory :moves="moves" />
 
       <div class="flex gap-2">
         <UButton label="New Game" icon="i-lucide-refresh-cw" variant="outline" class="flex-1" @click="resetGame" />
@@ -61,7 +61,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'game' })
 import { TheChessboard } from 'vue3-chessboard'
-import type BoardApi from 'vue3-chessboard/dist/src/classes/BoardApi'
+import type { BoardApi } from 'vue3-chessboard'
+import type { Key } from 'chessground/types'
 import 'vue3-chessboard/style.css'
 import type { Move } from 'chess.js'
 import type { EngineBestmoveResponse, EngineEvaluation } from '~/../shared/types'
@@ -74,7 +75,7 @@ const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer)
 
 const engineElo = ref(Number(route.query.elo) || 1500)
-const playerColor = ref<string>((route.query.color as string) || 'white')
+const playerColor = ref<'white' | 'black'>(((route.query.color as string) || 'white') as 'white' | 'black')
 const aiColor = computed(() => playerColor.value === 'white' ? 'black' : 'white')
 
 const boardConfig = computed(() => ({
@@ -86,7 +87,7 @@ const gameOver = ref(false)
 const gameOverReason = ref('')
 const boardKey = ref(0)
 const isAiThinking = ref(false)
-const boardApi = ref<InstanceType<typeof BoardApi> | null>(null)
+const boardApi = ref<BoardApi | null>(null)
 const evaluation = ref<{ type: 'cp' | 'mate'; value: number } | null>(null)
 
 const fetchEvaluation = async () => {
@@ -122,7 +123,7 @@ const gameOverText = computed(() => {
   return 'Game Over'
 })
 
-const onBoardCreated = (api: InstanceType<typeof BoardApi>) => {
+const onBoardCreated = (api: BoardApi) => {
   boardApi.value = api
   if (playerColor.value === 'black') {
     isAiThinking.value = true
@@ -200,8 +201,8 @@ const getAiMove = async () => {
       const promotion = result.bestmove.length > 4 ? result.bestmove[4] : undefined
 
       const success = boardApi.value.move({
-        from: from as `${string}${number}`,
-        to: to as `${string}${number}`,
+        from: from as Key,
+        to: to as Key,
         promotion: promotion as 'q' | 'r' | 'b' | 'n' | undefined,
       })
 

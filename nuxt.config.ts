@@ -10,6 +10,10 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  experimental: {
+    typedPages: false,
+  },
+
   icon: {
     serverBundle: 'local',
   },

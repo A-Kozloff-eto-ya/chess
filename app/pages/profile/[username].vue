@@ -156,13 +156,13 @@ const canAddFriend = computed(() => {
 const isProfileOnline = computed(() => {
   if (!profile.value) return false
   const status = getStatus(profile.value.id)
-  return status === true
+  return status?.online === true
 })
 
 const isProfileOffline = computed(() => {
   if (!profile.value) return false
   const status = getStatus(profile.value.id)
-  return status === false
+  return status?.online === false
 })
 
 const isOwnProfile = computed(() => {

@@ -37,7 +37,7 @@
               <div class="relative">
                 <UAvatar :src="friend.avatar || undefined" size="xs" />
                 <span v-if="isOnline(friend.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-800 bg-green-500" />
-                <span v-else-if="getStatus(friend.id) === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-800 bg-gray-500" />
+                <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-800 bg-gray-500" />
               </div>
               <div>
                 <p class="text-sm font-medium">{{ friend.username }}</p>

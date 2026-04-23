@@ -41,22 +41,39 @@ export default defineEventHandler(async (event) => {
   const baseUrl = getBaseUrl()
   const resetUrl = `${baseUrl}/reset-password?token=${token}`
 
-  await sendEmail(
-    user.email,
-    'Password Reset — Chess',
-    `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #e2e8f0;">Password Reset</h2>
-        <p style="color: #94a3b8;">Hello, ${user.username}!</p>
-        <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to set a new password:</p>
-        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0;">Reset Password</a>
-        <p style="color: #64748b; font-size: 13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-        <p style="color: #64748b; font-size: 13px;">Or copy this link: ${resetUrl}</p>
-      </div>
-    `,
-  ).catch((e) => {
-    console.error('[Forgot Password] Failed to send email:', e.message)
-  })
+  let sent = false
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await sendEmail(
+        user.email,
+        'Password Reset — Chess',
+        `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2 style="color: #e2e8f0;">Password Reset</h2>
+            <p style="color: #94a3b8;">Hello, ${user.username}!</p>
+            <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to set a new password:</p>
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0;">Reset Password</a>
+            <p style="color: #64748b; font-size: 13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+            <p style="color: #64748b; font-size: 13px;">Or copy this link: ${resetUrl}</p>
+          </div>
+        `,
+      )
+      sent = true
+      break
+    } catch (e: any) {
+      console.error(`[Forgot Password] Send attempt ${attempt} failed:`, e.message)
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 1000 * attempt))
+      }
+    }
+  }
+
+  if (!sent) {
+    console.error('[Forgot Password] All 3 attempts failed — deleting reset token')
+    try {
+      await db.delete(passwordResets).where(eq(passwordResets.token, token))
+    } catch {}
+  }
 
   return { success: true }
 })
