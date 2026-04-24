@@ -20,6 +20,7 @@ export function useGameSession(gameId: string) {
   const toast = useToast()
   const { joinGame, sendMove, resign, offerDraw, acceptDraw, abortGame, offerRematch, acceptRematch, declineRematch, sendChat, leaveGame, onMessage } = useChessWebSocket()
   const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
+  const sounds = useSounds()
 
   const gameData = ref<GameResponse | null>(null)
   const colorReady = ref(false)
@@ -144,10 +145,15 @@ export function useGameSession(gameId: string) {
     boardApi.value = api
   }
 
-  const onBoardMove = (move: { from: string; to: string; promotion?: string; san: string }) => {
+  const onBoardMove = (move: { from: string; to: string; promotion?: string; san: string; captured?: string }) => {
     if (applyingRemoteMove) return
     if (gameOver.value || isWaiting.value) return
     pendingLocalMove = true
+    if (move.captured) {
+      sounds.capture()
+    } else {
+      sounds.move()
+    }
     sendMove(gameId, { from: move.from, to: move.to, promotion: move.promotion })
   }
 
@@ -200,6 +206,11 @@ export function useGameSession(gameId: string) {
           if (pendingLocalMove) {
             pendingLocalMove = false
           } else if (msg.lastMove && boardApi.value) {
+            if (msg.lastMove.captured) {
+              sounds.capture()
+            } else {
+              sounds.move()
+            }
             applyingRemoteMove = true
             boardApi.value.move({
               from: msg.lastMove.from,
@@ -229,6 +240,9 @@ export function useGameSession(gameId: string) {
           gameData.value = { ...gameData.value!, result: '*' }
         }
         stopTimer()
+        if (msg.result === '1-0' || msg.result === '0-1') {
+          sounds.checkmate()
+        }
         fetchSession()
         break
 

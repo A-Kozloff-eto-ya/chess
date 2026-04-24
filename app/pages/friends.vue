@@ -3,12 +3,12 @@
     <h1 class="text-2xl font-bold">{{ $t('friends') }}</h1>
 
     <div v-if="loading" class="flex justify-center py-10">
-      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-gray-400" />
+      <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
     </div>
 
     <template v-else>
-      <div v-if="friends.length === 0" class="py-10 text-center text-gray-500">
-        <UIcon name="i-lucide-users" class="mx-auto mb-3 size-12 text-gray-600" />
+      <div v-if="friends.length === 0" class="py-10 text-center text-muted">
+        <UIcon name="i-lucide-users" class="mx-auto mb-3 size-12 text-muted" />
         <p>{{ $t('noFriendsYet') }}</p>
         <p class="mt-1 text-sm">{{ $t('searchForPlayers') }}</p>
       </div>
@@ -17,19 +17,19 @@
         <div
           v-for="friend in friends"
           :key="friend.id"
-          class="flex items-center justify-between rounded-lg bg-gray-800 p-3 transition-colors hover:bg-gray-750"
+          class="flex items-center justify-between rounded-lg bg-elevated p-3 transition-colors hover:bg-accented"
         >
           <NuxtLink :to="`/profile/${friend.username}`" class="flex items-center gap-3">
             <div class="relative">
               <UAvatar :src="friend.avatar || undefined" size="sm" />
-              <span v-if="isOnline(friend.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-800 bg-green-500" />
-              <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-gray-800 bg-gray-500" />
+              <span v-if="isOnline(friend.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-success" />
+              <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-muted" />
             </div>
             <div>
               <p class="font-medium">{{ friend.username }}</p>
-              <p v-if="isOnline(friend.id)" class="text-xs text-green-400">{{ $t('online') }}</p>
-              <p v-else-if="getStatus(friend.id)?.lastSeenAt" class="text-xs text-gray-500">{{ $t('lastSeen', { time: formatLastSeen(getStatus(friend.id)!.lastSeenAt!) }) }}</p>
-              <p class="text-xs text-gray-400">{{ friend.rating }} {{ $t('eloShort') }}</p>
+              <p v-if="isOnline(friend.id)" class="text-xs text-success">{{ $t('online') }}</p>
+              <p v-else-if="getStatus(friend.id)?.lastSeenAt" class="text-xs text-muted">{{ $t('lastSeen', { time: formatLastSeen(getStatus(friend.id)!.lastSeenAt!) }) }}</p>
+              <p class="text-xs text-muted">{{ friend.rating }} {{ $t('eloShort') }}</p>
             </div>
           </NuxtLink>
           <UButton

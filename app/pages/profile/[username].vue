@@ -4,20 +4,20 @@
       <div class="flex gap-4">
         <div class="relative flex-shrink-0">
           <UAvatar :src="profile.avatar || undefined" size="3xl" class="size-20 sm:size-32 md:size-40" />
-          <span v-if="isProfileOnline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-gray-900 bg-green-500" />
-          <span v-else-if="isProfileOffline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-gray-900 bg-gray-500" />
+          <span v-if="isProfileOnline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-success" />
+          <span v-else-if="isProfileOffline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-muted" />
         </div>
         <div class="flex flex-col justify-center min-w-0">
           <div class="flex items-center gap-2">
             <h1 class="text-2xl font-bold">{{ profile.username }}</h1>
-            <span v-if="isProfileOnline" class="text-xs font-medium text-green-400">{{ $t('online') }}</span>
-            <span v-else-if="isProfileOffline" class="text-xs font-medium text-gray-500">{{ $t('offline') }}</span>
+            <span v-if="isProfileOnline" class="text-xs font-medium text-success">{{ $t('online') }}</span>
+            <span v-else-if="isProfileOffline" class="text-xs font-medium text-muted">{{ $t('offline') }}</span>
           </div>
-          <p class="text-gray-400">
-            {{ $t('rating') }}: <span class="text-amber-400 font-semibold">{{ profile.rating }}</span>
+          <p class="text-muted">
+            {{ $t('rating') }}: <span class="text-primary font-semibold">{{ profile.rating }}</span>
           </p>
-          <p v-if="profile.bio" class="mt-1 text-sm text-gray-300">{{ profile.bio }}</p>
-          <p class="text-sm text-gray-500">{{ $t('joined', { date: formatDate(profile.createdAt) }) }}</p>
+          <p v-if="profile.bio" class="mt-1 text-sm text-default">{{ profile.bio }}</p>
+          <p class="text-sm text-muted">{{ $t('joined', { date: formatDate(profile.createdAt) }) }}</p>
           <UButton v-if="isOwnProfile && !editing" :label="$t('editProfile')" icon="i-lucide-pencil" size="sm" variant="outline" class="mt-2" @click="startEditing" />
           <div v-if="isFriend" class="mt-2">
             <UButton
@@ -81,14 +81,14 @@
       <template #header>
         <span class="font-semibold">{{ $t('gameHistory') }}</span>
       </template>
-      <div v-if="games.length === 0" class="py-4 text-center text-gray-500">
+      <div v-if="games.length === 0" class="py-4 text-center text-muted">
         {{ $t('noGamesPlayed') }}
       </div>
       <div v-else class="flex flex-col gap-2">
         <div
           v-for="game in games"
           :key="game.id"
-          class="flex items-center justify-between rounded-lg bg-gray-800 p-3 cursor-pointer hover:bg-gray-700 transition-colors"
+          class="flex items-center justify-between rounded-lg bg-elevated p-3 cursor-pointer hover:bg-accented transition-colors"
           @click="navigateTo(`/game/${game.id}`)"
         >
           <div class="flex items-center gap-3">
@@ -98,16 +98,16 @@
             >
               {{ getResultLabel(game) }}
             </span>
-            <span class="text-sm text-gray-300">{{ game.timeControl }}</span>
+            <span class="text-sm text-default">{{ game.timeControl }}</span>
           </div>
-          <span class="text-sm text-gray-400">{{ formatDate(game.createdAt) }}</span>
+          <span class="text-sm text-muted">{{ formatDate(game.createdAt) }}</span>
         </div>
       </div>
     </UCard>
   </div>
 
   <div v-else class="flex items-center justify-center py-20">
-    <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-gray-400" />
+    <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-muted" />
   </div>
 </template>
 
@@ -361,12 +361,12 @@ const getResultLabel = (game: ProfileGame) => {
 }
 
 const getResultClass = (game: ProfileGame) => {
-  if (!game.result || game.result === '*') return 'bg-gray-600'
+  if (!game.result || game.result === '*') return 'bg-muted'
   switch (game.result) {
-    case '1-0': return profile.value?.id === game.whitePlayerId ? 'bg-green-700' : 'bg-red-700'
-    case '0-1': return profile.value?.id === game.blackPlayerId ? 'bg-green-700' : 'bg-red-700'
-    case '1/2-1/2': return 'bg-yellow-700'
-    default: return 'bg-gray-600'
+    case '1-0': return profile.value?.id === game.whitePlayerId ? 'bg-success' : 'bg-error'
+    case '0-1': return profile.value?.id === game.blackPlayerId ? 'bg-success' : 'bg-error'
+    case '1/2-1/2': return 'bg-warning'
+    default: return 'bg-muted'
   }
 }
 

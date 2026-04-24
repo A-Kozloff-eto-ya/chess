@@ -2,19 +2,19 @@
   <div class="flex h-full flex-col">
     <div v-if="status === 'loading' || status === 'analyzing'" class="flex flex-1 items-center justify-center">
       <div class="text-center">
-        <UIcon name="i-lucide-brain" class="mx-auto mb-3 size-10 animate-pulse text-amber-400" />
+        <UIcon name="i-lucide-brain" class="mx-auto mb-3 size-10 animate-pulse text-primary" />
         <p class="font-semibold">{{ $t('analyzingGame') }}</p>
-        <p class="mt-1 text-sm text-gray-400">{{ $t('analysisMovetime') }}</p>
-        <div class="mx-auto mt-4 h-2 w-48 overflow-hidden rounded-full bg-gray-700">
-          <div class="h-full rounded-full bg-amber-500 transition-all duration-500" :style="{ width: progress + '%' }" />
+        <p class="mt-1 text-sm text-muted">{{ $t('analysisMovetime') }}</p>
+        <div class="mx-auto mt-4 h-2 w-48 overflow-hidden rounded-full bg-accented">
+          <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: progress + '%' }" />
         </div>
-        <p class="mt-2 text-xs text-gray-500">{{ progress }}%</p>
+        <p class="mt-2 text-xs text-muted">{{ progress }}%</p>
       </div>
     </div>
 
     <div v-else-if="status === 'failed'" class="flex flex-1 items-center justify-center">
       <div class="text-center">
-        <UIcon name="i-lucide-alert-triangle" class="mx-auto mb-3 size-10 text-red-400" />
+        <UIcon name="i-lucide-alert-triangle" class="mx-auto mb-3 size-10 text-error" />
         <p class="font-semibold">{{ $t('analysisFailed') }}</p>
         <UButton :label="$t('retry')" variant="outline" class="mt-4" @click="startAnalysis" />
       </div>
@@ -27,12 +27,12 @@
             <UAvatar :src="game?.blackPlayer?.avatar || undefined" size="sm" />
             <div>
               <p class="text-sm font-semibold">{{ game?.blackPlayer?.username }}</p>
-              <p class="text-xs text-gray-400">
-                {{ $t('accuracy') }}: <span :class="blackAccuracy >= 80 ? 'text-green-400' : blackAccuracy >= 50 ? 'text-yellow-400' : 'text-red-400'">{{ blackAccuracy }}%</span>
+              <p class="text-xs text-muted">
+                {{ $t('accuracy') }}: <span :class="blackAccuracy >= 80 ? 'text-success' : blackAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ blackAccuracy }}%</span>
               </p>
             </div>
           </div>
-          <div v-if="currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-white' : 'text-gray-300'">
+          <div v-if="currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
             {{ formatEval(currentEval) }}
           </div>
         </div>
@@ -53,12 +53,12 @@
             <UAvatar :src="game?.whitePlayer?.avatar || undefined" size="sm" />
             <div>
               <p class="text-sm font-semibold">{{ game?.whitePlayer?.username }}</p>
-              <p class="text-xs text-gray-400">
-                {{ $t('accuracy') }}: <span :class="whiteAccuracy >= 80 ? 'text-green-400' : whiteAccuracy >= 50 ? 'text-yellow-400' : 'text-red-400'">{{ whiteAccuracy }}%</span>
+              <p class="text-xs text-muted">
+                {{ $t('accuracy') }}: <span :class="whiteAccuracy >= 80 ? 'text-success' : whiteAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ whiteAccuracy }}%</span>
               </p>
             </div>
           </div>
-          <div class="text-sm text-gray-400">{{ $t('result') }}: {{ game?.result }}</div>
+          <div class="text-sm text-muted">{{ $t('result') }}: {{ game?.result }}</div>
         </div>
 
         <AnalysisEvalGraph
@@ -76,15 +76,15 @@
       </div>
 
       <div class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-        <div v-if="currentAnalyzedMove" class="rounded-lg bg-gray-800 p-3">
+        <div v-if="currentAnalyzedMove" class="rounded-lg bg-elevated p-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ currentAnalyzedMove.san }}</span>
             <span :class="qualityBadge(currentAnalyzedMove.quality)" class="rounded px-2 py-0.5 text-xs font-medium">
               {{ $t(currentAnalyzedMove.quality) }}
             </span>
           </div>
-          <div v-if="currentAnalyzedMove.bestMove" class="mt-2 text-xs text-gray-400">
-            {{ $t('bestMoveWas') }}: <span class="font-mono text-amber-400">{{ currentAnalyzedMove.bestMove }}</span>
+          <div v-if="currentAnalyzedMove.bestMove" class="mt-2 text-xs text-muted">
+            {{ $t('bestMoveWas') }}: <span class="font-mono text-primary">{{ currentAnalyzedMove.bestMove }}</span>
           </div>
         </div>
 
@@ -94,22 +94,22 @@
           @go-to-move="goToMove"
         />
 
-        <div class="rounded-lg bg-gray-800 p-3">
-          <p class="mb-2 text-sm font-medium text-gray-300">{{ $t('accuracyChart') }}</p>
+        <div class="rounded-lg bg-elevated p-3">
+          <p class="mb-2 text-sm font-medium text-default">{{ $t('accuracyChart') }}</p>
           <div class="flex items-center gap-3">
             <div class="flex-1">
-              <p class="text-xs text-gray-400">{{ game?.whitePlayer?.username }}</p>
-              <div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-700">
-                <div class="h-full rounded-full bg-green-500" :style="{ width: whiteAccuracy + '%' }" />
+              <p class="text-xs text-muted">{{ game?.whitePlayer?.username }}</p>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-accented">
+                <div class="h-full rounded-full bg-success" :style="{ width: whiteAccuracy + '%' }" />
               </div>
-              <p class="mt-1 text-xs" :class="whiteAccuracy >= 80 ? 'text-green-400' : 'text-gray-400'">{{ whiteAccuracy }}%</p>
+              <p class="mt-1 text-xs" :class="whiteAccuracy >= 80 ? 'text-success' : 'text-muted'">{{ whiteAccuracy }}%</p>
             </div>
             <div class="flex-1">
-              <p class="text-xs text-gray-400">{{ game?.blackPlayer?.username }}</p>
-              <div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-700">
-                <div class="h-full rounded-full bg-green-500" :style="{ width: blackAccuracy + '%' }" />
+              <p class="text-xs text-muted">{{ game?.blackPlayer?.username }}</p>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-accented">
+                <div class="h-full rounded-full bg-success" :style="{ width: blackAccuracy + '%' }" />
               </div>
-              <p class="mt-1 text-xs" :class="blackAccuracy >= 80 ? 'text-green-400' : 'text-gray-400'">{{ blackAccuracy }}%</p>
+              <p class="mt-1 text-xs" :class="blackAccuracy >= 80 ? 'text-success' : 'text-muted'">{{ blackAccuracy }}%</p>
             </div>
           </div>
         </div>
@@ -165,12 +165,12 @@ const formatEval = (cp: number) => {
 
 const qualityBadge = (quality: string) => {
   switch (quality) {
-    case 'best': return 'bg-green-900 text-green-300'
-    case 'good': return 'bg-blue-900 text-blue-300'
-    case 'inaccuracy': return 'bg-yellow-900 text-yellow-300'
-    case 'mistake': return 'bg-orange-900 text-orange-300'
-    case 'blunder': return 'bg-red-900 text-red-300'
-    default: return 'bg-gray-700 text-gray-300'
+    case 'best': return 'bg-success/20 text-success'
+    case 'good': return 'bg-info/20 text-info'
+    case 'inaccuracy': return 'bg-warning/20 text-warning'
+    case 'mistake': return 'bg-warning/20 text-warning'
+    case 'blunder': return 'bg-error/20 text-error'
+    default: return 'bg-accented text-default'
   }
 }
 

@@ -6,22 +6,22 @@
           <div class="relative">
             <UAvatar :src="game.whitePlayer?.avatar || undefined" size="xs" />
             <span v-if="game.whitePlayer && isOnline(game.whitePlayer.id)"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
+              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
             <span v-else-if="game.whitePlayer && getStatus(game.whitePlayer.id)?.online === false"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
+              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
           </div>
           <span class="text-sm">{{ game.whitePlayer?.username }}</span>
-          <span class="text-xs text-gray-400">({{ game.whitePlayer?.rating }})</span>
+          <span class="text-xs text-muted">({{ game.whitePlayer?.rating }})</span>
         </div>
-        <span class="font-mono text-amber-400">{{ game.result || '*' }}</span>
+        <span class="font-mono text-primary">{{ game.result || '*' }}</span>
         <div class="flex items-center gap-2">
           <span class="text-sm">{{ game.blackPlayer?.username }}</span>
           <div class="relative">
             <UAvatar :src="game.blackPlayer?.avatar || undefined" size="xs" />
             <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
+              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
             <span v-else-if="game.blackPlayer && getStatus(game.blackPlayer.id)?.online === false"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
+              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
           </div>
         </div>
       </div>

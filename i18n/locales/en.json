@@ -1,5 +1,5 @@
 {
-  "chess": "Chess",
+  "chess": "Checkmate",
   "home": "Home",
   "playAI": "Play AI",
   "signIn": "Sign in",
@@ -217,6 +217,10 @@
   "result": "Result",
 
   "settings": "Settings",
+  "sound": "Sound",
+  "enabled": "Enabled",
+  "volume": "Volume",
+  "language": "Language",
   "importPGN": "Import PGN",
   "importPgnDesc": "Import and analyze PGN games",
   "tournaments": "Tournaments",

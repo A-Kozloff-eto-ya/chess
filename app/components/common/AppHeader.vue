@@ -1,8 +1,8 @@
 <template>
-  <header class="border-b border-gray-800 bg-gray-900">
+  <header class="border-b border-default bg-default">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
       <NuxtLink to="/" class="flex items-center gap-2 text-xl font-bold" :aria-label="`${$t('chess')} — ${$t('home')}`">
-        <UIcon name="i-lucide-crown" class="size-6 text-amber-400" aria-hidden="true" />
+        <UIcon name="i-lucide-crown" class="size-6 text-amber-500" aria-hidden="true" />
         <span>{{ $t('chess') }}</span>
       </NuxtLink>
 
@@ -20,6 +20,10 @@
         </template>
 
         <UButton v-else :label="$t('signIn')" icon="i-lucide-log-in" @click="showLogin = true" />
+
+        <CommonThemePicker />
+
+        <UColorModeButton />
 
         <CommonLanguageSwitcher />
       </nav>

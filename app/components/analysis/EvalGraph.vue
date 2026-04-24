@@ -1,20 +1,20 @@
 <template>
   <div class="eval-graph-container" :style="{ width: width + 'px' }">
     <svg :width="width" :height="height" class="eval-graph-svg">
-      <rect x="0" y="0" :width="width" :height="height" fill="#111827" rx="4" />
-      <line x1="0" :y1="midY" :x2="width" :y2="midY" stroke="#374151" stroke-width="1" />
+      <rect x="0" y="0" :width="width" :height="height" fill="var(--ui-bg-elevated)" rx="4" />
+      <line x1="0" :y1="midY" :x2="width" :y2="midY" stroke="var(--ui-border)" stroke-width="1" />
 
       <template v-if="evaluations.length > 1">
         <polygon :points="areaPoints" fill="url(#whiteGrad)" opacity="0.3" />
-        <polyline :points="linePoints" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linejoin="round" />
+        <polyline :points="linePoints" fill="none" stroke="var(--ui-primary)" stroke-width="1.5" stroke-linejoin="round" />
       </template>
 
       <line v-if="currentIndex >= 0 && evaluations.length > 1"
         :x1="indexToX(currentIndex)" y1="0" :x2="indexToX(currentIndex)" :y2="height"
-        stroke="#fbbf24" stroke-width="1" opacity="0.7" />
+        stroke="var(--ui-primary)" stroke-width="1" opacity="0.7" />
       <circle v-if="currentIndex >= 0 && evaluations.length > 1"
         :cx="indexToX(currentIndex)" :cy="evalToY(evaluations[currentIndex] ?? 0)"
-        r="3" fill="#fbbf24" />
+        r="3" fill="var(--ui-primary)" />
 
       <defs>
         <linearGradient id="whiteGrad" x1="0" y1="0" x2="0" :y2="1">

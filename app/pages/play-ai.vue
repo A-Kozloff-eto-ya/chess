@@ -3,9 +3,9 @@
     <div class="flex flex-1 flex-col items-center gap-2 min-w-0 min-h-0">
       <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-bot" class="size-5 text-blue-400" />
+          <UIcon name="i-lucide-bot" class="size-5 text-info" />
           <span class="font-semibold">{{ $t('stockfishAI') }}</span>
-          <span class="text-sm text-gray-400">{{ $t('elo', { elo: engineElo }) }}</span>
+          <span class="text-sm text-muted">{{ $t('elo', { elo: engineElo }) }}</span>
         </div>
         <div class="font-mono text-lg" role="timer" :aria-label="`AI time: ${formatTime(opponentTime)}`">{{ formatTime(opponentTime) }}</div>
       </div>
@@ -20,6 +20,7 @@
               :reactive-config="true"
               @board-created="onBoardCreated"
               @move="onBoardMove"
+              @check="onCheck"
               @checkmate="onCheckmate"
               @stalemate="onStalemate"
               @draw="onDraw"
@@ -30,7 +31,7 @@
 
       <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-user" class="size-5 text-green-400" />
+          <UIcon name="i-lucide-user" class="size-5 text-success" />
           <span class="font-semibold">{{ $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
         </div>
         <div class="font-mono text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
@@ -45,12 +46,12 @@
         <UButton :label="$t('resign')" icon="i-lucide-flag" variant="outline" color="error" class="flex-1" :disabled="gameOver" @click="onResign" />
       </div>
 
-      <div v-if="gameOver" class="rounded-lg bg-gray-800 p-4 text-center" role="alert">
+      <div v-if="gameOver" class="rounded-lg bg-elevated p-4 text-center" role="alert">
         <p class="text-lg font-bold">{{ gameOverText }}</p>
         <UButton :label="$t('playAgain')" class="mt-3" @click="resetGame" />
       </div>
 
-      <div v-if="isAiThinking" class="flex items-center gap-2 text-sm text-gray-400" role="status">
+      <div v-if="isAiThinking" class="flex items-center gap-2 text-sm text-muted" role="status">
         <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
         <span>{{ $t('aiThinking') }}</span>
       </div>
@@ -70,6 +71,7 @@ import { parseTimeControl } from '~/../shared/constants'
 
 const DEFAULT_TC = parseTimeControl('10+0')
 const { t } = useI18n()
+const sounds = useSounds()
 
 const route = useRoute()
 const gameContainer = ref<HTMLElement | null>(null)
@@ -135,6 +137,13 @@ const onBoardCreated = (api: BoardApi) => {
 const onBoardMove = (move: Move) => {
   if (gameOver.value) return
   moves.value.push(move.san)
+
+  if (move.captured) {
+    sounds.capture()
+  } else {
+    sounds.move()
+  }
+
   startTimer(() => {
     const turn = boardApi.value?.getTurnColor()
     return turn === 'white' ? 'white' : 'black'
@@ -155,6 +164,11 @@ const onCheckmate = () => {
   gameOver.value = true
   gameOverReason.value = 'checkmate'
   stopTimer()
+  sounds.checkmate()
+}
+
+const onCheck = () => {
+  sounds.check()
 }
 
 const onStalemate = () => {

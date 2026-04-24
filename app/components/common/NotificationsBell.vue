@@ -4,7 +4,7 @@
       <UButton icon="i-lucide-bell" variant="ghost" class="relative" aria-label="Notifications">
         <span
           v-if="pendingCount > 0"
-          class="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+          class="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-inverted"
           aria-label="Unread notifications"
           role="status"
         >
@@ -14,25 +14,25 @@
 
       <template #content>
         <div class="w-72 p-2">
-          <p class="mb-2 px-2 text-sm font-semibold text-gray-300">{{ $t('friendRequests') }}</p>
-          <div v-if="friendRequests.length === 0" class="px-2 py-4 text-center text-sm text-gray-500">
+          <p class="mb-2 px-2 text-sm font-semibold text-default">{{ $t('friendRequests') }}</p>
+          <div v-if="friendRequests.length === 0" class="px-2 py-4 text-center text-sm text-muted">
             {{ $t('noPendingRequests') }}
           </div>
           <div v-else class="flex flex-col gap-1">
             <div
               v-for="req in friendRequests"
               :key="req.requestId"
-              class="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-gray-800"
+              class="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-elevated/50"
             >
               <div class="flex items-center gap-2">
                 <div class="relative">
                   <UAvatar :src="req.from.avatar || undefined" size="xs" />
-                  <span v-if="isOnline(req.from.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-green-500" />
-                  <span v-else-if="getStatus(req.from.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-gray-900 bg-gray-500" />
+                  <span v-if="isOnline(req.from.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
+                  <span v-else-if="getStatus(req.from.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
                 </div>
                 <div>
                   <p class="text-sm font-medium">{{ req.from.username }}</p>
-                  <p class="text-xs text-gray-400">{{ req.from.rating }} {{ $t('eloShort') }}</p>
+                  <p class="text-xs text-muted">{{ req.from.rating }} {{ $t('eloShort') }}</p>
                 </div>
               </div>
               <div class="flex gap-1">

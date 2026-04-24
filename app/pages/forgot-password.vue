@@ -6,13 +6,13 @@
       </template>
 
       <div v-if="submitted" class="text-center py-4">
-        <UIcon name="i-lucide-mail" class="size-12 text-blue-400 mb-3 mx-auto" />
-        <p class="text-gray-300">{{ $t('resetLinkSent') }}</p>
+        <UIcon name="i-lucide-mail" class="size-12 text-info mb-3 mx-auto" />
+        <p class="text-default">{{ $t('resetLinkSent') }}</p>
         <UButton :label="$t('backToLogin')" variant="outline" class="mt-4" @click="navigateTo('/')" />
       </div>
 
       <UForm v-else :state="form" @submit="onSubmit">
-        <p class="text-sm text-gray-400 mb-4">{{ $t('enterEmailReset') }}</p>
+        <p class="text-sm text-muted mb-4">{{ $t('enterEmailReset') }}</p>
         <UFormField :label="$t('email')" name="email">
           <UInput v-model="form.email" type="email" />
         </UFormField>

@@ -6,14 +6,14 @@
       </template>
 
       <div v-if="success" class="text-center py-4">
-        <UIcon name="i-lucide-check-circle" class="size-12 text-green-400 mb-3 mx-auto" />
-        <p class="text-gray-300">{{ $t('passwordResetSuccess') }}</p>
+        <UIcon name="i-lucide-check-circle" class="size-12 text-success mb-3 mx-auto" />
+        <p class="text-default">{{ $t('passwordResetSuccess') }}</p>
         <UButton :label="$t('signIn')" class="mt-4" @click="navigateTo('/')" />
       </div>
 
       <div v-else-if="invalidToken" class="text-center py-4">
-        <UIcon name="i-lucide-x-circle" class="size-12 text-red-400 mb-3 mx-auto" />
-        <p class="text-gray-300">{{ $t('invalidResetLink') }}</p>
+        <UIcon name="i-lucide-x-circle" class="size-12 text-error mb-3 mx-auto" />
+        <p class="text-default">{{ $t('invalidResetLink') }}</p>
         <UButton :label="$t('requestNewLink')" variant="outline" class="mt-4" @click="navigateTo('/forgot-password')" />
       </div>
 

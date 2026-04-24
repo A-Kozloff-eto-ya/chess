@@ -57,7 +57,7 @@ const blackPercent = computed(() => {
   flex-shrink: 0;
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #374151;
+  border: 1px solid var(--ui-border);
   align-self: stretch;
 }
 
@@ -68,14 +68,14 @@ const blackPercent = computed(() => {
 }
 
 .eval-bar-black {
-  background: #1e293b;
+  background: #000;
   transition: height 0.6s ease;
   position: relative;
   min-height: 0;
 }
 
 .eval-bar-white {
-  background: #e2e8f0;
+  background: #fff;
   flex: 1;
   position: relative;
   min-height: 0;
@@ -93,11 +93,11 @@ const blackPercent = computed(() => {
 
 .eval-label-black {
   bottom: 2px;
-  color: #e2e8f0;
+  color: var(--ui-text-highlighted);
 }
 
 .eval-label-white {
   top: 2px;
-  color: #1e293b;
+  color: var(--ui-text-inverted);
 }
 </style>

@@ -1,15 +1,15 @@
 <template>
   <div class="flex h-full flex-col">
-    <div class="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-2">
-      <span class="text-sm font-medium text-gray-300">{{ $t('moves') }}</span>
-      <span class="text-sm text-gray-500">{{ analyzedMoves.length }}</span>
+    <div class="flex items-center justify-between rounded-lg bg-elevated px-3 py-2">
+      <span class="text-sm font-medium text-default">{{ $t('moves') }}</span>
+      <span class="text-sm text-muted">{{ analyzedMoves.length }}</span>
     </div>
 
     <div
       ref="scrollContainer"
-      class="mt-2 flex-1 overflow-y-auto rounded-lg bg-gray-900 p-2"
+      class="mt-2 flex-1 overflow-y-auto rounded-lg bg-default p-2"
     >
-      <div v-if="analyzedMoves.length === 0" class="py-4 text-center text-sm text-gray-500">
+      <div v-if="analyzedMoves.length === 0" class="py-4 text-center text-sm text-muted">
         {{ $t('noMovesYet') }}
       </div>
       <table v-else class="w-full text-sm 2xl:text-base">
@@ -18,7 +18,7 @@
             v-for="(pair, i) in pairedMoves"
             :key="i"
           >
-            <td class="w-8 text-right text-gray-500 tabular-nums">{{ i + 1 }}.</td>
+            <td class="w-8 text-right text-muted tabular-nums">{{ i + 1 }}.</td>
             <td
               class="cursor-pointer rounded px-2 py-0.5"
               :class="moveClass(pair.whiteIdx)"
@@ -87,23 +87,23 @@ const pairedMoves = computed(() => {
 
 const qualityDot = (quality?: string) => {
   switch (quality) {
-    case 'best': return 'bg-green-400'
-    case 'good': return 'bg-blue-400'
-    case 'inaccuracy': return 'bg-yellow-400'
-    case 'mistake': return 'bg-orange-400'
-    case 'blunder': return 'bg-red-500'
-    default: return 'bg-gray-500'
+    case 'best': return 'bg-success'
+    case 'good': return 'bg-info'
+    case 'inaccuracy': return 'bg-warning'
+    case 'mistake': return 'bg-warning'
+    case 'blunder': return 'bg-error'
+    default: return 'bg-muted'
   }
 }
 
 const moveClass = (moveIdx: number) => {
-  return moveIdx + 1 === props.currentMoveIndex ? 'bg-gray-700' : 'hover:bg-gray-800/50'
+  return moveIdx + 1 === props.currentMoveIndex ? 'bg-accented' : 'hover:bg-elevated/50'
 }
 
 watch(() => props.currentMoveIndex, async () => {
   await nextTick()
   if (scrollContainer.value) {
-    const active = scrollContainer.value.querySelector('.bg-gray-700')
+    const active = scrollContainer.value.querySelector('.bg-accented')
     if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 })

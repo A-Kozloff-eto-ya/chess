@@ -1,5 +1,5 @@
 {
-  "chess": "Шахматы",
+  "chess": "Шах и Мат",
   "home": "Главная",
   "playAI": "Играть с ИИ",
   "signIn": "Войти",
@@ -217,6 +217,10 @@
   "result": "Результат",
 
   "settings": "Настройки",
+  "sound": "Звук",
+  "enabled": "Включено",
+  "volume": "Громкость",
+  "language": "Язык",
   "importPGN": "Импорт PGN",
   "importPgnDesc": "Импорт и анализ PGN партий",
   "tournaments": "Турниры",

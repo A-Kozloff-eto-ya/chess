@@ -13,12 +13,12 @@
 
     <div
       v-if="focused && query.length >= 2"
-      class="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-gray-700 bg-gray-900 shadow-xl"
+      class="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-default bg-elevated shadow-xl"
     >
-      <div v-if="loading" class="px-3 py-4 text-center text-sm text-gray-500">
+      <div v-if="loading" class="px-3 py-4 text-center text-sm text-muted">
         {{ $t('searching') }}
       </div>
-      <div v-else-if="results.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
+      <div v-else-if="results.length === 0" class="px-3 py-4 text-center text-sm text-muted">
         {{ $t('noPlayersFound') }}
       </div>
       <div v-else class="flex flex-col py-1">
@@ -26,16 +26,16 @@
           v-for="u in results"
           :key="u.id"
           :to="`/profile/${u.username}`"
-          class="flex items-center gap-3 px-3 py-2 hover:bg-gray-800 transition-colors"
+          class="flex items-center gap-3 px-3 py-2 hover:bg-elevated/50 transition-colors"
           @mousedown.prevent="navigateToProfile(u.username)"
         >
           <UAvatar :src="u.avatar || undefined" size="xs" />
           <div>
             <p class="text-sm font-medium">{{ u.username }}</p>
-            <p class="text-xs text-gray-400">{{ u.rating }} ELO</p>
+            <p class="text-xs text-muted">{{ u.rating }} ELO</p>
           </div>
-          <span v-if="isOnline(u.id)" class="ml-auto size-2 rounded-full bg-green-500" />
-          <span v-else-if="getStatus(u.id)?.online === false" class="ml-auto size-2 rounded-full bg-gray-500" />
+          <span v-if="isOnline(u.id)" class="ml-auto size-2 rounded-full bg-success" />
+          <span v-else-if="getStatus(u.id)?.online === false" class="ml-auto size-2 rounded-full bg-muted" />
         </NuxtLink>
       </div>
     </div>

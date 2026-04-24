@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-6">
     <div>
       <h1 class="text-2xl font-bold">{{ $t('importPGN') }}</h1>
-      <p class="mt-1 text-sm text-gray-400">{{ $t('importPgnDesc') }}</p>
+      <p class="mt-1 text-sm text-muted">{{ $t('importPgnDesc') }}</p>
     </div>
 
     <UCard>
@@ -12,12 +12,12 @@
             <div class="flex flex-col gap-4 pt-4">
               <div
                 class="rounded-lg border-2 border-dashed p-6 text-center transition-colors"
-                :class="isDragOver ? 'border-primary bg-primary/10' : 'border-gray-700 hover:border-gray-500'"
+                :class="isDragOver ? 'border-primary bg-primary/10' : 'border-default hover:border-accented'"
                 @dragover.prevent="isDragOver = true"
                 @dragleave.prevent="isDragOver = false"
                 @drop.prevent="onDrop"
               >
-                <p class="text-sm text-gray-400">{{ $t('dragDropPgn') }}</p>
+                <p class="text-sm text-muted">{{ $t('dragDropPgn') }}</p>
               </div>
 
               <UTextarea
@@ -33,7 +33,7 @@
                   <UButton :label="$t('uploadFile')" icon="i-lucide-file-up" variant="outline" :disabled="analysisStatus === 'analyzing'" />
                   <input type="file" accept=".pgn,.txt" class="hidden" @change="onFileUpload">
                 </label>
-                <p v-if="errorMessage" class="text-sm text-red-400">{{ errorMessage }}</p>
+                <p v-if="errorMessage" class="text-sm text-error">{{ errorMessage }}</p>
               </div>
             </div>
           </template>
@@ -49,7 +49,7 @@
 
               <div class="flex items-center gap-4">
                 <UButton :label="$t('loadFen')" icon="i-lucide-upload" :disabled="!fenText.trim()" @click="loadFen" />
-                <p v-if="errorMessage" class="text-sm text-red-400">{{ errorMessage }}</p>
+                <p v-if="errorMessage" class="text-sm text-error">{{ errorMessage }}</p>
               </div>
             </div>
           </template>
@@ -57,17 +57,17 @@
       </div>
     </UCard>
 
-    <div v-if="analysisStatus === 'analyzing'" class="flex flex-col items-center gap-3 rounded-lg bg-gray-800 p-6">
-      <UIcon name="i-lucide-brain" class="size-8 animate-pulse text-amber-400" />
+    <div v-if="analysisStatus === 'analyzing'" class="flex flex-col items-center gap-3 rounded-lg bg-elevated p-6">
+      <UIcon name="i-lucide-brain" class="size-8 animate-pulse text-primary" />
       <p class="font-semibold">{{ $t('analyzingGame') }}</p>
-      <div class="h-2 w-48 overflow-hidden rounded-full bg-gray-700">
-        <div class="h-full rounded-full bg-amber-500 transition-all duration-500" :style="{ width: progress + '%' }" />
+      <div class="h-2 w-48 overflow-hidden rounded-full bg-accented">
+        <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: progress + '%' }" />
       </div>
-      <p class="text-xs text-gray-500">{{ progress }}%</p>
+      <p class="text-xs text-muted">{{ progress }}%</p>
     </div>
 
-    <div v-else-if="analysisStatus === 'failed'" class="flex flex-col items-center gap-3 rounded-lg bg-gray-800 p-6">
-      <UIcon name="i-lucide-alert-triangle" class="size-8 text-red-400" />
+    <div v-else-if="analysisStatus === 'failed'" class="flex flex-col items-center gap-3 rounded-lg bg-elevated p-6">
+      <UIcon name="i-lucide-alert-triangle" class="size-8 text-error" />
       <p class="font-semibold">{{ $t('analysisFailed') }}</p>
       <UButton :label="$t('retry')" variant="outline" @click="retryAnalysis" />
     </div>
@@ -78,10 +78,10 @@
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium">{{ loadedGame?.headers?.Black || $t('black') }}</span>
           </div>
-          <div v-if="analysis && currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-white' : 'text-gray-300'">
+          <div v-if="analysis && currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
             {{ formatEval(currentEval) }}
           </div>
-          <div v-else-if="!analysis && currentMoveIndex > 0" class="text-sm text-gray-400">
+          <div v-else-if="!analysis && currentMoveIndex > 0" class="text-sm text-muted">
             {{ loadedGame?.result || '*' }}
           </div>
         </div>
@@ -102,7 +102,7 @@
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium">{{ loadedGame?.headers?.White || $t('white') }}</span>
           </div>
-          <div class="text-sm text-gray-400">{{ loadedGame?.result || '*' }}</div>
+          <div class="text-sm text-muted">{{ loadedGame?.result || '*' }}</div>
         </div>
 
         <AnalysisEvalGraph
@@ -122,15 +122,15 @@
       </div>
 
       <div class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-        <div v-if="analysis && currentAnalyzedMove" class="rounded-lg bg-gray-800 p-3">
+        <div v-if="analysis && currentAnalyzedMove" class="rounded-lg bg-elevated p-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ currentAnalyzedMove.san }}</span>
             <span :class="qualityBadge(currentAnalyzedMove.quality)" class="rounded px-2 py-0.5 text-xs font-medium">
               {{ $t(currentAnalyzedMove.quality) }}
             </span>
           </div>
-          <div v-if="currentAnalyzedMove.bestMove" class="mt-2 text-xs text-gray-400">
-            {{ $t('bestMoveWas') }}: <span class="font-mono text-amber-400">{{ currentAnalyzedMove.bestMove }}</span>
+          <div v-if="currentAnalyzedMove.bestMove" class="mt-2 text-xs text-muted">
+            {{ $t('bestMoveWas') }}: <span class="font-mono text-primary">{{ currentAnalyzedMove.bestMove }}</span>
           </div>
         </div>
 
@@ -146,22 +146,22 @@
           :moves="sanMoves"
         />
 
-        <div v-if="analysis" class="rounded-lg bg-gray-800 p-3">
-          <p class="mb-2 text-sm font-medium text-gray-300">{{ $t('accuracyChart') }}</p>
+        <div v-if="analysis" class="rounded-lg bg-elevated p-3">
+          <p class="mb-2 text-sm font-medium text-default">{{ $t('accuracyChart') }}</p>
           <div class="flex items-center gap-3">
             <div class="flex-1">
-              <p class="text-xs text-gray-400">{{ loadedGame?.headers?.White || $t('white') }}</p>
-              <div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-700">
-                <div class="h-full rounded-full bg-green-500" :style="{ width: whiteAccuracy + '%' }" />
+              <p class="text-xs text-muted">{{ loadedGame?.headers?.White || $t('white') }}</p>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-accented">
+                <div class="h-full rounded-full bg-success" :style="{ width: whiteAccuracy + '%' }" />
               </div>
-              <p class="mt-1 text-xs" :class="whiteAccuracy >= 80 ? 'text-green-400' : 'text-gray-400'">{{ whiteAccuracy }}%</p>
+              <p class="mt-1 text-xs" :class="whiteAccuracy >= 80 ? 'text-success' : 'text-muted'">{{ whiteAccuracy }}%</p>
             </div>
             <div class="flex-1">
-              <p class="text-xs text-gray-400">{{ loadedGame?.headers?.Black || $t('black') }}</p>
-              <div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-700">
-                <div class="h-full rounded-full bg-green-500" :style="{ width: blackAccuracy + '%' }" />
+              <p class="text-xs text-muted">{{ loadedGame?.headers?.Black || $t('black') }}</p>
+              <div class="mt-1 h-2 overflow-hidden rounded-full bg-accented">
+                <div class="h-full rounded-full bg-success" :style="{ width: blackAccuracy + '%' }" />
               </div>
-              <p class="mt-1 text-xs" :class="blackAccuracy >= 80 ? 'text-green-400' : 'text-gray-400'">{{ blackAccuracy }}%</p>
+              <p class="mt-1 text-xs" :class="blackAccuracy >= 80 ? 'text-success' : 'text-muted'">{{ blackAccuracy }}%</p>
             </div>
           </div>
         </div>
@@ -232,12 +232,12 @@ const formatEval = (cp: number) => {
 
 const qualityBadge = (quality: string) => {
   switch (quality) {
-    case 'best': return 'bg-green-900 text-green-300'
-    case 'good': return 'bg-blue-900 text-blue-300'
-    case 'inaccuracy': return 'bg-yellow-900 text-yellow-300'
-    case 'mistake': return 'bg-orange-900 text-orange-300'
-    case 'blunder': return 'bg-red-900 text-red-300'
-    default: return 'bg-gray-700 text-gray-300'
+    case 'best': return 'bg-success/20 text-success'
+    case 'good': return 'bg-info/20 text-info'
+    case 'inaccuracy': return 'bg-warning/20 text-warning'
+    case 'mistake': return 'bg-warning/20 text-warning'
+    case 'blunder': return 'bg-error/20 text-error'
+    default: return 'bg-accented text-default'
   }
 }
 
