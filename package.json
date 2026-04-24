@@ -14,6 +14,7 @@
   "dependencies": {
     "@iconify-json/lucide": "^1.2.102",
     "@iconify-json/simple-icons": "^1.2.78",
+    "@kolapsis/shm-sdk": "^1.1.0",
     "@nuxt/ui": "^4.6.1",
     "chess.js": "^1.4.0",
     "drizzle-orm": "^0.45.2",

@@ -32,7 +32,7 @@
           @click.stop="showJoinModal = true" />
       </UCard>
 
-      <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
+      <!-- <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-eye" class="size-5 text-highlighted" />
@@ -40,7 +40,7 @@
           </div>
         </template>
         <p class="text-sm text-muted">{{ $t('spectateFriends') }}</p>
-      </UCard>
+      </UCard> -->
 
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }"
         @click="loggedIn ? navigateTo('/import') : showLoginPrompt()">
@@ -53,7 +53,7 @@
         <p class="text-sm text-muted">{{ $t('importPgnDesc') }}</p>
       </UCard>
 
-      <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
+      <!-- <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-trophy" class="size-5 text-primary" />
@@ -61,7 +61,7 @@
           </div>
         </template>
         <p class="text-sm text-muted">{{ $t('comingSoon') }}</p>
-      </UCard>
+      </UCard> -->
     </div>
 
     <ClientOnly>

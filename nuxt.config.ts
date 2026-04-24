@@ -50,5 +50,10 @@ export default defineNuxtConfig({
       },
     },
     stockfishPath: process.env.STOCKFISH_PATH || './stockfish',
+    shm: {
+      serverUrl: process.env.SHM_SERVER_URL || '',
+      appName: process.env.SHM_APP_NAME || 'Chess',
+      enabled: process.env.SHM_ENABLED !== 'false',
+    },
   },
 })

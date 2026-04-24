@@ -11,6 +11,9 @@ services:
       - NUXT_OAUTH_GOOGLE_CLIENT_SECRET=${NUXT_OAUTH_GOOGLE_CLIENT_SECRET}
       - NUXT_HUB_DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
       - DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
+      - SHM_SERVER_URL=http://shm:8080
+      - SHM_APP_NAME=Chess
+      - SHM_ENABLED=${SHM_ENABLED:-true}
     depends_on:
       - db
       - redis
@@ -31,5 +34,36 @@ services:
     ports:
       - "6379:6379"
 
+  shm-db:
+    image: postgres:15-alpine
+    container_name: shm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shm
+      POSTGRES_PASSWORD: ${SHM_DB_PASSWORD:-shm_dev}
+      POSTGRES_DB: metrics
+    volumes:
+      - shm_pgdata:/var/lib/postgresql/data
+      - ./shm/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shm -d metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  shm:
+    image: ghcr.io/kolapsis/shm:latest
+    container_name: shm-app
+    restart: unless-stopped
+    depends_on:
+      shm-db:
+        condition: service_healthy
+    environment:
+      SHM_DB_DSN: "postgres://shm:${SHM_DB_PASSWORD:-shm_dev}@shm-db:5432/metrics?sslmode=disable"
+      PORT: "8080"
+    ports:
+      - "${SHM_PORT:-8080}:8080"
+
 volumes:
   pgdata:
+  shm_pgdata:
