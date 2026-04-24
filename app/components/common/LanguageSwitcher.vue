@@ -5,15 +5,19 @@
 </template>
 
 <script setup lang="ts">
-const { locale, locales } = useI18n()
-const switchLocalePath = useSwitchLocalePath()
+const { locale } = useI18n()
+
+const availableLocales = [
+  { code: 'en', name: 'English' },
+  { code: 'ru', name: 'Русский' },
+]
 
 const currentLabel = computed(() => {
-  return (locales.value as { code: string; name: string }[]).find(l => l.code === locale.value)?.name || locale.value
+  return availableLocales.find(l => l.code === locale.value)?.name || locale.value
 })
 
 const localeItems = computed(() =>
-  (locales.value as { code: string; name: string }[])
+  availableLocales
     .filter(l => l.code !== locale.value)
     .map(l => ({
       label: l.name,

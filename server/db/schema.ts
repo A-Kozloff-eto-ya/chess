@@ -14,6 +14,7 @@ export const users = pgTable('users', {
   rating: integer().default(1200),
   provider: text().default('email'),
   providerId: text(),
+  emailVerified: text('emailVerified').default('false'),
   lastSeenAt: timestamp('lastSeenAt'),
   createdAt: timestamp().notNull().defaultNow(),
 })
@@ -60,6 +61,22 @@ export const passwordResets = pgTable('password_resets', {
   token: text().notNull().unique(),
   expiresAt: timestamp().notNull(),
   usedAt: timestamp(),
+  createdAt: timestamp().notNull().defaultNow(),
+})
+
+export const gameAnalyses = pgTable('game_analyses', {
+  id: serial().primaryKey(),
+  gameId: integer('gameId').notNull().references(() => games.id),
+  status: text().notNull().default('pending'),
+  analysis: text().notNull().default('{}'),
+  createdAt: timestamp().notNull().defaultNow(),
+})
+
+export const emailVerifications = pgTable('email_verifications', {
+  id: serial().primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id),
+  token: text().notNull().unique(),
+  expiresAt: timestamp().notNull(),
   createdAt: timestamp().notNull().defaultNow(),
 })
 

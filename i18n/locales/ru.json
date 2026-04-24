@@ -199,5 +199,26 @@
   "failedToJoinGame": "Не удалось присоединиться к игре",
   "sentYouFriendRequest": "{username} отправил(а) вам запрос в друзья",
 
-  "skipToContent": "Перейти к содержимому"
+  "skipToContent": "Перейти к содержимому",
+
+  "analyzeGame": "Анализ",
+  "analyzingGame": "Анализ партии с помощью Stockfish...",
+  "analysisMovetime": "Это может занять некоторое время в зависимости от длины партии",
+  "analysisFailed": "Ошибка анализа. Попробуйте снова.",
+  "retry": "Повторить",
+  "best": "Лучший",
+  "good": "Хороший",
+  "inaccuracy": "Неточность",
+  "mistake": "Ошибка",
+  "blunder": "Зевок",
+  "bestMoveWas": "Лучший ход",
+  "accuracy": "Точность",
+  "accuracyChart": "Точность",
+  "result": "Результат",
+
+  "settings": "Настройки",
+  "importPGN": "Импорт PGN",
+  "importPgnDesc": "Импорт и анализ PGN партий",
+  "tournaments": "Турниры",
+  "comingSoon": "Скоро будет"
 }

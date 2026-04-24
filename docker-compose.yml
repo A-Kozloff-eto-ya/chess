@@ -10,6 +10,7 @@ services:
       - NUXT_OAUTH_GOOGLE_CLIENT_ID=${NUXT_OAUTH_GOOGLE_CLIENT_ID}
       - NUXT_OAUTH_GOOGLE_CLIENT_SECRET=${NUXT_OAUTH_GOOGLE_CLIENT_SECRET}
       - NUXT_HUB_DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
+      - DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
     depends_on:
       - db
       - redis

@@ -15,11 +15,13 @@ interface EngineTask {
   positionCmd: string
   movetime: number
   elo?: number
-  type: 'bestmove' | 'eval'
+  type: 'bestmove' | 'eval' | 'analysis'
   resolve: (result: unknown) => void
   reject: (err: Error) => void
   timeout: ReturnType<typeof setTimeout>
   evalScore: { type: 'cp' | 'mate'; value: number } | null
+  depth: number
+  pv: string[]
 }
 
 interface EngineTaskWithMeta extends EngineTask {
@@ -55,10 +57,16 @@ function createWorker(stockfishPath: string): PoolWorker {
 
       if (!worker.currentTask) continue
 
-      if (worker.currentTask.type === 'eval' && trimmed.startsWith('info')) {
+      if ((worker.currentTask.type === 'eval' || worker.currentTask.type === 'analysis') && trimmed.startsWith('info')) {
         const score = parseEvalFromInfo(trimmed)
         if (score) {
           worker.currentTask.evalScore = score
+        }
+        if (worker.currentTask.type === 'analysis') {
+          const depthMatch = trimmed.match(/\bdepth (\d+)\b/)
+          if (depthMatch) worker.currentTask.depth = parseInt(depthMatch[1])
+          const pvMatch = trimmed.match(/ pv (.+)$/)
+          if (pvMatch) worker.currentTask.pv = pvMatch[1].trim().split(/\s+/)
         }
       }
 
@@ -70,6 +78,9 @@ function createWorker(stockfishPath: string): PoolWorker {
 
         if (task.type === 'eval') {
           task.resolve({ eval: task.evalScore })
+        } else if (task.type === 'analysis') {
+          const parts = trimmed.split(/\s+/)
+          task.resolve({ eval: task.evalScore, bestmove: parts[1] ?? '', depth: task.depth, pv: task.pv })
         } else {
           const parts = trimmed.split(/\s+/)
           task.resolve({ bestmove: parts[1] ?? '', ponder: parts[3] ?? null })
@@ -176,6 +187,8 @@ export function submitToPool(
       reject,
       timeout,
       evalScore: null,
+      depth: 0,
+      pv: [],
     }
 
     queue.push(task)
@@ -211,6 +224,45 @@ export function submitEvalToPool(
       reject,
       timeout,
       evalScore: null,
+      depth: 0,
+      pv: [],
+    }
+
+    queue.push(task)
+    processQueue()
+  })
+}
+
+export function submitAnalysisToPool(
+  stockfishPath: string,
+  positionCmd: string,
+  movetime: number
+): Promise<{ eval: { type: 'cp' | 'mate'; value: number } | null; bestmove: string; depth: number; pv: string[] }> {
+  return new Promise((resolve, reject) => {
+    if (queue.length >= QUEUE_MAX) {
+      reject(new Error('Engine queue is full'))
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      const idx = queue.findIndex(t => (t as EngineTaskWithMeta).resolve === resolve)
+      if (idx > -1) {
+        queue.splice(idx, 1)
+        reject(new Error('Stockfish analysis timeout (queued)'))
+      }
+    }, movetime + 10000)
+
+    const task: EngineTaskWithMeta = {
+      stockfishPath,
+      positionCmd,
+      movetime,
+      type: 'analysis',
+      resolve: resolve as (result: unknown) => void,
+      reject,
+      timeout,
+      evalScore: null,
+      depth: 0,
+      pv: [],
     }
 
     queue.push(task)

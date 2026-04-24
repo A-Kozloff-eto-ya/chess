@@ -199,5 +199,26 @@
   "failedToJoinGame": "Failed to join game",
   "sentYouFriendRequest": "{username} sent you a friend request",
 
-  "skipToContent": "Skip to content"
+  "skipToContent": "Skip to content",
+
+  "analyzeGame": "Analyze",
+  "analyzingGame": "Analyzing game with Stockfish...",
+  "analysisMovetime": "This may take a moment depending on game length",
+  "analysisFailed": "Analysis failed. Please try again.",
+  "retry": "Retry",
+  "best": "Best",
+  "good": "Good",
+  "inaccuracy": "Inaccuracy",
+  "mistake": "Mistake",
+  "blunder": "Blunder",
+  "bestMoveWas": "Best move",
+  "accuracy": "Accuracy",
+  "accuracyChart": "Accuracy",
+  "result": "Result",
+
+  "settings": "Settings",
+  "importPGN": "Import PGN",
+  "importPgnDesc": "Import and analyze PGN games",
+  "tournaments": "Tournaments",
+  "comingSoon": "Coming soon"
 }

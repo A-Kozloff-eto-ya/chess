@@ -2,16 +2,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxthub/core', '@nuxt/ui', 'nuxt-auth-utils', '@nuxtjs/i18n'],
+  modules: ['@nuxt/ui', 'nuxt-auth-utils'],
 
-  i18n: {
-    locales: [
-      { code: 'en', name: 'English', file: 'en.json' },
-      { code: 'ru', name: 'Русский', file: 'ru.json' },
-    ],
-    defaultLocale: 'en',
-    langDir: 'locales',
-    strategy: 'no_prefix',
+  imports: {
+    presets: [{ from: 'vue-i18n', imports: ['useI18n'] }],
   },
 
   css: ['~/assets/css/main.css'],
@@ -22,11 +16,6 @@ export default defineNuxtConfig({
 
   icon: {
     serverBundle: 'local',
-  },
-
-  hub: {
-    db: 'postgresql',
-    blob: true,
   },
 
   nitro: {

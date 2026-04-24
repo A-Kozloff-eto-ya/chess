@@ -6,14 +6,15 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      - /app/.nuxt
-      - /app/.output
     environment:
+      - CHOKIDAR_USEPOLLING=true
       - NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD}
       - NUXT_OAUTH_GITHUB_CLIENT_ID=${NUXT_OAUTH_GITHUB_CLIENT_ID}
       - NUXT_OAUTH_GITHUB_CLIENT_SECRET=${NUXT_OAUTH_GITHUB_CLIENT_SECRET}
       - NUXT_OAUTH_GOOGLE_CLIENT_ID=${NUXT_OAUTH_GOOGLE_CLIENT_ID}
       - NUXT_OAUTH_GOOGLE_CLIENT_SECRET=${NUXT_OAUTH_GOOGLE_CLIENT_SECRET}
       - NUXT_HUB_DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
+      - DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
+    ports:
+      - "3000:3000"
+      - "24678:24678"

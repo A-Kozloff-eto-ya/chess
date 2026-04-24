@@ -148,7 +148,9 @@ export async function restoreRoomsFromDB(): Promise<void> {
     }
 
     console.log(`[GameRooms] Restored ${activeGames.length} rooms from DB`)
-  } catch (e) {
-    console.error('[GameRooms] Failed to restore rooms from DB:', e)
+  } catch (e: any) {
+    if (!e?.cause?.message?.includes('does not exist')) {
+      console.error('[GameRooms] Failed to restore rooms from DB:', e)
+    }
   }
 }

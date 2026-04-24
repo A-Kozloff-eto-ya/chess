@@ -33,6 +33,12 @@
       </div>
 
       <div class="flex gap-2">
+        <UButton :label="$t('analyzeGame')" icon="i-lucide-microscope" variant="outline" size="sm" @click="navigateTo(`/analyze/${gameId}`)" />
+        <UButton :label="$t('copyPGN')" icon="i-lucide-copy" variant="outline" size="sm" @click="copyPGN" />
+        <UButton :label="$t('downloadPGN')" icon="i-lucide-download" variant="outline" size="sm" @click="downloadPGN" />
+        <UButton :label="$t('copyFEN')" icon="i-lucide-square-code" variant="outline" size="sm" @click="copyFEN" />
+      </div>
+      <div class="flex gap-2">
         <UButton :label="$t('first')" icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move"
           @click="goToMove(0)" />
         <UButton :label="$t('prev')" icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move"
@@ -59,6 +65,8 @@ import type { BoardApi } from 'vue3-chessboard'
 const route = useRoute()
 const gameId = route.params.id as string
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { t } = useI18n()
+const toast = useToast()
 
 interface GameMove {
   from: string
@@ -140,6 +148,30 @@ const goToMove = (index: number) => {
   const clamped = Math.max(0, Math.min(index, positions.value.length - 1))
   currentMoveIndex.value = clamped
   showPosition(clamped)
+}
+
+const copyPGN = async () => {
+  if (!game.value?.pgn) return
+  await navigator.clipboard.writeText(game.value.pgn)
+  toast.add({ title: t('pgnCopied'), color: 'success' })
+}
+
+const downloadPGN = () => {
+  if (!game.value?.pgn) return
+  const blob = new Blob([game.value.pgn], { type: 'application/x-chess-pgn' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `game-${gameId}.pgn`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const copyFEN = async () => {
+  const fen = positions.value[currentMoveIndex.value]
+  if (!fen) return
+  await navigator.clipboard.writeText(fen)
+  toast.add({ title: t('fenCopied'), color: 'success' })
 }
 
 onMounted(fetchGame)

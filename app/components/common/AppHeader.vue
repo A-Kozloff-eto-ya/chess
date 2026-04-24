@@ -45,6 +45,7 @@ const handleLogout = async () => {
 const menuItems = computed(() => [
   [{ label: t('profile'), icon: 'i-lucide-user', onSelect: () => navigateTo('/profile/me') }],
   [{ label: t('friends'), icon: 'i-lucide-users', onSelect: () => navigateTo('/friends') }],
+  [{ label: t('settings'), icon: 'i-lucide-settings', onSelect: () => navigateTo('/settings') }],
   [{ label: t('signOut'), icon: 'i-lucide-log-out', onSelect: handleLogout }],
 ])
 </script>

@@ -85,6 +85,16 @@ export interface FetchError {
   message?: string
 }
 
+export interface GameAnalysis {
+  id: number
+  gameId: number
+  status: 'pending' | 'analyzing' | 'completed' | 'failed'
+  analyzedMoves: AnalyzedMove[]
+  evaluations: number[]
+  accuracy: { white: number; black: number }
+  progress?: number
+}
+
 export interface EngineBestmoveResponse {
   bestmove: string
   ponder: string | null

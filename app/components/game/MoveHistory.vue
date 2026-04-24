@@ -14,7 +14,7 @@
       <div v-if="moves.length === 0" class="py-4 text-center text-sm text-gray-500">
         {{ $t('noMovesYet') }}
       </div>
-      <table v-else class="w-full text-sm">
+      <table v-else class="w-full text-sm 2xl:text-base">
         <tbody>
           <tr
             v-for="(pair, i) in pairedMoves"
@@ -25,12 +25,12 @@
             <td
               class="rounded px-2 py-0.5"
               :class="pair.white.isLast ? 'bg-gray-700' : ''"
-            >{{ pair.white.san }}</td>
+            ><span class="piece-icon">{{ pieceIcon(pair.white.san) }}</span>{{ pair.white.san }}</td>
             <td
               v-if="pair.black"
               class="rounded px-2 py-0.5"
               :class="pair.black.isLast ? 'bg-gray-700' : ''"
-            >{{ pair.black.san }}</td>
+            ><span class="piece-icon">{{ pieceIcon(pair.black.san) }}</span>{{ pair.black.san }}</td>
             <td v-else class="px-2 py-0.5" />
           </tr>
         </tbody>
@@ -45,6 +45,16 @@ const props = defineProps<{ moves: (string | { san: string })[] }>()
 const scrollContainer = ref<HTMLElement | null>(null)
 
 const toSan = (m: string | { san: string }): string => typeof m === 'string' ? m : m.san
+
+const pieceIcon = (san: string): string => {
+  if (san.startsWith('N')) return '♞'
+  if (san.startsWith('B')) return '♝'
+  if (san.startsWith('R')) return '♜'
+  if (san.startsWith('Q')) return '♛'
+  if (san.startsWith('K') || san.startsWith('O')) return '♚'
+  if (/^[a-h]/.test(san)) return '♟'
+  return ''
+}
 
 const pairedMoves = computed(() => {
   const pairs: { white: { san: string; isLast: boolean }; black?: { san: string; isLast: boolean } }[] = []
@@ -67,3 +77,14 @@ watch(() => props.moves.length, async () => {
   }
 })
 </script>
+
+<style scoped>
+.piece-icon {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  margin-right: 1px;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+</style>

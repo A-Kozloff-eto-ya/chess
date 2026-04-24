@@ -5,7 +5,7 @@ const SIDEBAR_WIDTH = 320
 const INFO_BARS_HEIGHT = 72
 const GAP = 16
 
-export function useBoardSize(containerRef: Ref<HTMLElement | null>) {
+export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight: number = 0) {
   const boardSize = ref(400)
 
   let observer: ResizeObserver | null = null
@@ -22,7 +22,7 @@ export function useBoardSize(containerRef: Ref<HTMLElement | null>) {
 
     if (isDesktop) {
       const availW = containerW - SIDEBAR_WIDTH - GAP - BOARD_AREA_OVERHEAD
-      const availH = containerH - INFO_BARS_HEIGHT - GAP
+      const availH = containerH - INFO_BARS_HEIGHT - GAP - extraHeight
       maxSize = Math.min(availW, availH)
     } else {
       maxSize = containerW - BOARD_AREA_OVERHEAD

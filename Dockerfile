@@ -6,7 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 COPY . .
-RUN npm run build; test -f .output/server/index.mjs
+RUN npm run dev; test -f .output/server/index.mjs
 
 FROM node:22-slim AS runner
 

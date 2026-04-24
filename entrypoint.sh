@@ -11,15 +11,5 @@ until PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c '\
   sleep 1
 done
 
-MIGRATIONS_DIR="/app/.output/server/db/migrations"
-if [ -d "$MIGRATIONS_DIR" ]; then
-  echo "Running migrations..."
-  for f in "$MIGRATIONS_DIR"/*.sql; do
-    [ -f "$f" ] || continue
-    echo "  Applying $(basename "$f")..."
-    PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f "$f"
-  done
-fi
-
 echo "Starting server..."
 exec "$@"

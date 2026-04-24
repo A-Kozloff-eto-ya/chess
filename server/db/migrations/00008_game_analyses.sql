@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS game_analyses (
+  id SERIAL PRIMARY KEY,
+  "gameId" INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  analysis TEXT NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE("gameId")
+);

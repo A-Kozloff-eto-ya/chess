@@ -40,14 +40,24 @@
         <p class="text-sm text-gray-400">{{ $t('spectateFriends') }}</p>
       </UCard>
 
+      <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }" @click="loggedIn ? navigateTo('/import') : showLoginPrompt()">
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-upload" class="size-5 text-cyan-400" />
+            <span class="font-semibold">{{ $t('importPGN') }}</span>
+          </div>
+        </template>
+        <p class="text-sm text-gray-400">{{ $t('importPgnDesc') }}</p>
+      </UCard>
+
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-search" class="size-5 text-amber-400" />
-            <span class="font-semibold">{{ $t('analyze') }}</span>
+            <UIcon name="i-lucide-trophy" class="size-5 text-amber-400" />
+            <span class="font-semibold">{{ $t('tournaments') }}</span>
           </div>
         </template>
-        <p class="text-sm text-gray-400">{{ $t('postGameAnalysis') }}</p>
+        <p class="text-sm text-gray-400">{{ $t('comingSoon') }}</p>
       </UCard>
     </div>
 

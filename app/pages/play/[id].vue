@@ -84,6 +84,7 @@
       <div v-if="gameOver" class="rounded-lg bg-gray-800 p-4 text-center" role="alert">
         <p class="text-lg font-bold">{{ gameOverText }}</p>
         <div class="mt-3 flex flex-col gap-2">
+          <UButton :label="$t('analyzeGame')" icon="i-lucide-microscope" color="neutral" variant="outline" class="w-full" @click="navigateTo(`/analyze/${gameId}`)" />
           <div v-if="!rematchOfferSent && !rematchOfferReceived && !rematchDeclined" class="flex gap-2">
             <UButton :label="$t('rematch')" icon="i-lucide-refresh-cw" class="flex-1" @click="offerRematch" />
             <UButton :label="$t('newGame')" variant="outline" class="flex-1" @click="navigateTo('/')" />
