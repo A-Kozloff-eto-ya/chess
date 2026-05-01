@@ -1,18 +1,16 @@
 <template>
-  <div ref="gameContainer" class="flex h-full gap-4 lg:flex-row max-w-7xl mx-auto">
-    <div class="flex flex-1 flex-col items-center gap-2 min-w-0 min-h-0">
-      <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
+  <div ref="gameContainer" class="flex h-full flex-col lg:h-auto lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
+    <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2 lg:px-0">
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-bot" class="size-5 text-info" />
-          <span class="font-semibold">{{ $t('stockfishAI') }}</span>
-          <span class="text-sm text-muted">{{ $t('elo', { elo: engineElo }) }}</span>
+          <span class="text-sm font-semibold lg:text-base">{{ $t('stockfishAI') }}</span>
+          <span class="text-xs text-muted lg:text-sm">{{ $t('elo', { elo: engineElo }) }}</span>
         </div>
-        <div class="font-mono text-lg" role="timer" :aria-label="`AI time: ${formatTime(opponentTime)}`">{{ formatTime(opponentTime) }}</div>
+        <div class="font-mono text-xl lg:text-lg" role="timer" :aria-label="`AI time: ${formatTime(opponentTime)}`">{{ formatTime(opponentTime) }}</div>
       </div>
 
-      <div class="board-area flex w-full gap-2" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
-        <GameEvaluationBar :evaluation="evaluation" :flipped="playerColor === 'black'" />
-        <div class="flex-1 min-w-0 min-h-0">
+      <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
           <ClientOnly>
             <TheChessboard
               :key="boardKey"
@@ -26,20 +24,21 @@
               @draw="onDraw"
             />
           </ClientOnly>
-        </div>
       </div>
 
-      <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-user" class="size-5 text-success" />
-          <span class="font-semibold">{{ $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
+          <span class="text-sm font-semibold lg:text-base">{{ $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
         </div>
-        <div class="font-mono text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
+        <div class="font-mono text-xl lg:text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
       </div>
     </div>
 
-    <div class="flex h-full w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-      <GameMoveHistory :moves="moves" />
+    <div class="mt-2 flex flex-col gap-2 p-2 lg:mt-0 lg:w-80 lg:shrink-0 lg:gap-4">
+      <div class="hidden lg:block">
+        <GameMoveHistory :moves="moves" />
+      </div>
 
       <div class="flex gap-2">
         <UButton :label="$t('newGame')" icon="i-lucide-refresh-cw" variant="outline" class="flex-1" @click="resetGame" />
@@ -54,6 +53,10 @@
       <div v-if="isAiThinking" class="flex items-center gap-2 text-sm text-muted" role="status">
         <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
         <span>{{ $t('aiThinking') }}</span>
+      </div>
+
+      <div class="lg:hidden">
+        <GameMoveHistory :moves="moves" />
       </div>
     </div>
   </div>

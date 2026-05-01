@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col max-h-96">
+  <div class="flex h-full flex-col max-h-48 lg:max-h-96">
     <div class="flex items-center justify-between rounded-lg bg-elevated px-3 py-2" role="status" aria-label="Move count">
       <span class="text-sm font-medium text-default">{{ $t('moves') }}</span>
       <span class="text-sm text-muted">{{ moves.length }}</span>

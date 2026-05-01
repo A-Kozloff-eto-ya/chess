@@ -2,3 +2,30 @@
 @import "@nuxt/ui";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sat: env(safe-area-inset-top, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1023px) {
+  body {
+    padding-bottom: calc(56px + var(--sab));
+  }
+}
+
+.cg-wrap {
+  touch-action: none;
+}

@@ -1,12 +1,14 @@
 import { ref, onUnmounted, nextTick, watch, type Ref } from 'vue'
 
-const BOARD_AREA_OVERHEAD = 36
 const SIDEBAR_WIDTH = 320
 const INFO_BARS_HEIGHT = 72
 const GAP = 16
+const PADDING = 16
 
 export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight: number = 0) {
   const boardSize = ref(400)
+  const isMobile = ref(false)
+  const isLandscape = ref(false)
 
   let observer: ResizeObserver | null = null
 
@@ -16,16 +18,20 @@ export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight:
 
     const containerW = el.clientWidth
     const containerH = el.clientHeight
-    const isDesktop = window.innerWidth >= 1024
+    const desktop = window.innerWidth >= 1024
+    isMobile.value = !desktop
+    isLandscape.value = !desktop && window.innerWidth > window.innerHeight
 
     let maxSize: number
 
-    if (isDesktop) {
-      const availW = containerW - SIDEBAR_WIDTH - GAP - BOARD_AREA_OVERHEAD
+    if (desktop) {
+      const availW = containerW - SIDEBAR_WIDTH - GAP
       const availH = containerH - INFO_BARS_HEIGHT - GAP - extraHeight
       maxSize = Math.min(availW, availH)
     } else {
-      maxSize = containerW - BOARD_AREA_OVERHEAD
+      const availW = containerW
+      const availH = containerH - INFO_BARS_HEIGHT - GAP - extraHeight
+      maxSize = Math.min(availW, availH)
     }
 
     boardSize.value = Math.round(Math.max(maxSize, 200))
@@ -50,5 +56,5 @@ export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight:
     }
   })
 
-  return { boardSize }
+  return { boardSize, isMobile, isLandscape }
 }

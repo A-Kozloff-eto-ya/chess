@@ -1,0 +1,149 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD}
+      - NUXT_OAUTH_GITHUB_CLIENT_ID=${NUXT_OAUTH_GITHUB_CLIENT_ID}
+      - NUXT_OAUTH_GITHUB_CLIENT_SECRET=${NUXT_OAUTH_GITHUB_CLIENT_SECRET}
+      - NUXT_OAUTH_GOOGLE_CLIENT_ID=${NUXT_OAUTH_GOOGLE_CLIENT_ID}
+      - NUXT_OAUTH_GOOGLE_CLIENT_SECRET=${NUXT_OAUTH_GOOGLE_CLIENT_SECRET}
+      - NUXT_HUB_DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
+      - DATABASE_URL=postgresql://chess:${POSTGRES_PASSWORD:-chess_dev}@db:5432/chess
+      - SHM_SERVER_URL=http://shm:8080
+      - SHM_APP_NAME=Chess
+      - SHM_ENABLED=${SHM_ENABLED:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chess
+      POSTGRES_USER: chess
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chess_dev}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chess -d chess"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    command: >
+      postgres
+      -c shared_buffers=32MB
+      -c effective_cache_size=64MB
+      -c work_mem=2MB
+      -c maintenance_work_mem=16MB
+      -c wal_buffers=1MB
+      -c max_connections=30
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+      -c log_timezone=UTC
+      -c timezone=UTC
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 40M
+    command: >
+      redis-server
+      --maxmemory 30mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+      --appendonly no
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  shm-db:
+    image: postgres:15-alpine
+    container_name: shm-db
+    restart: unless-stopped
+    profiles:
+      - shm
+    environment:
+      POSTGRES_USER: shm
+      POSTGRES_PASSWORD: ${SHM_DB_PASSWORD:-shm_dev}
+      POSTGRES_DB: metrics
+    volumes:
+      - shm_pgdata:/var/lib/postgresql/data
+      - ./shm/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shm -d metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+    command: >
+      postgres
+      -c shared_buffers=16MB
+      -c effective_cache_size=32MB
+      -c work_mem=2MB
+      -c maintenance_work_mem=8MB
+      -c max_connections=10
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  shm:
+    image: ghcr.io/kolapsis/shm:latest
+    container_name: shm-app
+    restart: unless-stopped
+    profiles:
+      - shm
+    depends_on:
+      shm-db:
+        condition: service_healthy
+    environment:
+      SHM_DB_DSN: "postgres://shm:${SHM_DB_PASSWORD:-shm_dev}@shm-db:5432/metrics?sslmode=disable"
+      PORT: "8080"
+    ports:
+      - "${SHM_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  pgdata:
+  shm_pgdata:

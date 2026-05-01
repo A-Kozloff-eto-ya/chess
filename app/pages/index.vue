@@ -2,11 +2,35 @@
   <div class="flex flex-col items-center gap-8">
     <div class="text-center">
       <h1 class="text-4xl font-bold flex items-center justify-center">
-            <UIcon name="i-lucide-crown" class="mr-2 text-primary" />
+        <UIcon name="i-lucide-crown" class="mr-2 text-primary" />
         {{ $t('chess') }}
       </h1>
       <p class="mt-2 text-muted">{{ $t('playChessDesc') }}</p>
     </div>
+
+    <ClientOnly>
+      <div v-if="loggedIn" class="w-full max-w-2xl">
+        <UCard>
+          <template #header>
+            <span class="font-semibold">{{ $t('yourStats') }}</span>
+          </template>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p class="text-2xl font-bold text-primary">{{ stats.rating }}</p>
+              <p class="text-sm text-muted">{{ $t('rating') }}</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-success">{{ stats.gamesPlayed }}</p>
+              <p class="text-sm text-muted">{{ $t('games') }}</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold text-info">{{ stats.winRate }}%</p>
+              <p class="text-sm text-muted">{{ $t('winRate') }}</p>
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </ClientOnly>
 
     <div class="grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
       <UCard class="cursor-pointer transition-transform hover:scale-105" @click="showAiModal = true">
@@ -64,29 +88,7 @@
       </UCard> -->
     </div>
 
-    <ClientOnly>
-      <div v-if="loggedIn" class="w-full max-w-2xl">
-        <UCard>
-          <template #header>
-            <span class="font-semibold">{{ $t('yourStats') }}</span>
-          </template>
-          <div class="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p class="text-2xl font-bold text-primary">{{ stats.rating }}</p>
-              <p class="text-sm text-muted">{{ $t('rating') }}</p>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-success">{{ stats.gamesPlayed }}</p>
-              <p class="text-sm text-muted">{{ $t('games') }}</p>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-info">{{ stats.winRate }}%</p>
-              <p class="text-sm text-muted">{{ $t('winRate') }}</p>
-            </div>
-          </div>
-        </UCard>
-      </div>
-    </ClientOnly>
+
 
     <UModal v-model:open="showJoinModal">
       <template #content>

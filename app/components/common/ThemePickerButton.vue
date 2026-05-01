@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import colors from 'tailwindcss/colors'
+
+const props = defineProps<{
   label: string
   icon?: string
   chip?: string
@@ -9,6 +11,10 @@ defineProps<{
 const slots = defineSlots<{
   leading: () => any
 }>()
+
+function getColor(color: string, shade: number) {
+  return (colors as any)[color]?.[shade] ?? ''
+}
 </script>
 
 <template>
@@ -24,11 +30,11 @@ const slots = defineSlots<{
     <template v-if="chip || !!slots.leading" #leading>
       <slot name="leading">
         <span
-          class="inline-block size-2 rounded-full"
+          class="block size-2 shrink-0 rounded-full"
           :class="`bg-(--color-light) dark:bg-(--color-dark)`"
           :style="{
-            '--color-light': `var(--color-${chip}-500)`,
-            '--color-dark': `var(--color-${chip}-400)`
+            '--color-light': getColor(props.chip!, 500),
+            '--color-dark': getColor(props.chip!, 400)
           }"
         />
       </slot>

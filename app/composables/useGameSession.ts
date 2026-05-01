@@ -49,6 +49,7 @@ export function useGameSession(gameId: string) {
   const boardConfig = reactive({
     orientation: 'white' as 'white' | 'black',
     viewOnly: true,
+    premovable: { enabled: true },
   })
 
   watch([isWaiting, gameOver], () => {

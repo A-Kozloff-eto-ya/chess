@@ -1,52 +1,53 @@
 <template>
-  <div v-if="game" class="flex flex-col gap-4 lg:flex-row">
+  <div v-if="game" ref="gameContainer" class="flex flex-col gap-3 lg:flex-row lg:gap-4">
     <div class="flex flex-1 flex-col items-center gap-2">
-      <div class="flex w-full max-w-[560px] items-center justify-between">
-        <div class="flex items-center gap-2">
+      <div class="flex w-full items-center justify-between" :style="{ maxWidth: (boardSize + 36) + 'px' }">
+        <div class="flex items-center gap-2 min-w-0">
           <div class="relative">
             <UAvatar :src="game.whitePlayer?.avatar || undefined" size="xs" />
             <span v-if="game.whitePlayer && isOnline(game.whitePlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
-            <span v-else-if="game.whitePlayer && getStatus(game.whitePlayer.id)?.online === false"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
           </div>
-          <span class="text-sm">{{ game.whitePlayer?.username }}</span>
-          <span class="text-xs text-muted">({{ game.whitePlayer?.rating }})</span>
+          <span class="truncate text-sm">{{ game.whitePlayer?.username }}</span>
+          <span class="hidden text-xs text-muted sm:inline">({{ game.whitePlayer?.rating }})</span>
         </div>
-        <span class="font-mono text-primary">{{ game.result || '*' }}</span>
-        <div class="flex items-center gap-2">
-          <span class="text-sm">{{ game.blackPlayer?.username }}</span>
-          <div class="relative">
+        <span class="shrink-0 font-mono text-sm text-primary px-2">{{ game.result || '*' }}</span>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="truncate text-sm text-right">{{ game.blackPlayer?.username }}</span>
+          <div class="relative shrink-0">
             <UAvatar :src="game.blackPlayer?.avatar || undefined" size="xs" />
             <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
-            <span v-else-if="game.blackPlayer && getStatus(game.blackPlayer.id)?.online === false"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
           </div>
         </div>
       </div>
 
-      <div class="w-full">
+      <div class="board-area w-full" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
         <ClientOnly>
           <TheChessboard :board-config="boardConfig" @board-created="onBoardCreated" />
         </ClientOnly>
       </div>
 
-      <div class="flex gap-2">
-        <UButton :label="$t('analyzeGame')" icon="i-lucide-microscope" variant="outline" size="sm" @click="navigateTo(`/analyze/${gameId}`)" />
-        <UButton :label="$t('copyPGN')" icon="i-lucide-copy" variant="outline" size="sm" @click="copyPGN" />
-        <UButton :label="$t('downloadPGN')" icon="i-lucide-download" variant="outline" size="sm" @click="downloadPGN" />
-        <UButton :label="$t('copyFEN')" icon="i-lucide-square-code" variant="outline" size="sm" @click="copyFEN" />
+      <div class="flex flex-wrap gap-1.5" :style="{ maxWidth: (boardSize + 36) + 'px' }">
+        <UButton icon="i-lucide-microscope" variant="outline" size="sm" class="flex-1 min-w-0" @click="navigateTo(`/analyze/${gameId}`)">
+          <span class="truncate">{{ $t('analyzeGame') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-copy" variant="outline" size="sm" class="flex-1 min-w-0" @click="copyPGN">
+          <span class="truncate">{{ $t('copyPGN') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-download" variant="outline" size="sm" class="flex-1 min-w-0" @click="downloadPGN">
+          <span class="truncate">{{ $t('downloadPGN') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-square-code" variant="outline" size="sm" class="flex-1 min-w-0" @click="copyFEN">
+          <span class="truncate">{{ $t('copyFEN') }}</span>
+        </UButton>
       </div>
-      <div class="flex gap-2">
-        <UButton :label="$t('first')" icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move"
-          @click="goToMove(0)" />
-        <UButton :label="$t('prev')" icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move"
-          @click="goToMove(currentMoveIndex - 1)" />
-        <UButton :label="$t('next')" icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move"
-          @click="goToMove(currentMoveIndex + 1)" />
-        <UButton :label="$t('last')" icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move"
-          @click="goToMove(moves.length)" />
+
+      <div class="flex gap-1.5" :style="{ maxWidth: (boardSize + 36) + 'px' }">
+        <UButton icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move" class="flex-1" @click="goToMove(0)" />
+        <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" class="flex-1" @click="goToMove(currentMoveIndex - 1)" />
+        <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" class="flex-1" @click="goToMove(currentMoveIndex + 1)" />
+        <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" class="flex-1" @click="goToMove(moves.length)" />
       </div>
     </div>
 
@@ -67,6 +68,9 @@ const gameId = route.params.id as string
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 const { t } = useI18n()
 const toast = useToast()
+
+const gameContainer = ref<HTMLElement | null>(null)
+const { boardSize } = useBoardSize(gameContainer)
 
 interface GameMove {
   from: string
@@ -176,3 +180,23 @@ const copyFEN = async () => {
 
 onMounted(fetchGame)
 </script>
+
+<style scoped>
+.board-area :deep(.main-wrap) {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+.board-area :deep(.main-board) {
+  position: relative;
+  height: 100%;
+  padding-bottom: 0;
+  width: auto;
+  aspect-ratio: 1;
+}
+.board-area :deep(.cg-wrap) {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+</style>

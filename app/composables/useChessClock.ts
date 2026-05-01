@@ -5,9 +5,14 @@ export function useChessClock() {
   let lastTick: number = 0
 
   const formatTime = (ms: number) => {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000))
+    if (ms <= 0) return '0:00.0'
+    const totalSeconds = Math.floor(ms / 1000)
+    const tenths = Math.floor((ms % 1000) / 100)
     const minutes = Math.floor(totalSeconds / 60)
     const seconds = totalSeconds % 60
+    if (ms < 10000) {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}.${tenths}`
+    }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 

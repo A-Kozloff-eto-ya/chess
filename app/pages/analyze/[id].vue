@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col">
+  <div class="flex h-full flex-col lg:h-auto">
     <div v-if="status === 'loading' || status === 'analyzing'" class="flex flex-1 items-center justify-center">
       <div class="text-center">
         <UIcon name="i-lucide-brain" class="mx-auto mb-3 size-10 animate-pulse text-primary" />
@@ -20,27 +20,25 @@
       </div>
     </div>
 
-    <div v-else-if="analysis" ref="gameContainer" class="flex flex-1 gap-4 lg:flex-row">
-      <div class="flex flex-1 flex-col items-center gap-2 min-w-0 min-h-0">
+    <div v-else-if="analysis" ref="gameContainer" class="flex flex-1 flex-col gap-2 lg:flex-row lg:gap-4">
+      <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2">
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <UAvatar :src="game?.blackPlayer?.avatar || undefined" size="sm" />
-            <div>
-              <p class="text-sm font-semibold">{{ game?.blackPlayer?.username }}</p>
+            <div class="min-w-0">
+              <p class="truncate text-sm font-semibold">{{ game?.blackPlayer?.username }}</p>
               <p class="text-xs text-muted">
                 {{ $t('accuracy') }}: <span :class="blackAccuracy >= 80 ? 'text-success' : blackAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ blackAccuracy }}%</span>
               </p>
             </div>
           </div>
-          <div v-if="currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
+          <div v-if="currentMoveIndex > 0" class="shrink-0 font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
             {{ formatEval(currentEval) }}
           </div>
         </div>
 
         <div class="board-area flex w-full gap-2" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
-          <GameEvaluationBar
-            :evaluation="evalForBar"
-          />
+          <GameEvaluationBar :evaluation="evalForBar" :compact="boardSize < 360" />
           <div class="flex-1 min-w-0 min-h-0">
             <ClientOnly>
               <TheChessboard :board-config="boardConfig" @board-created="onBoardCreated" />
@@ -49,33 +47,34 @@
         </div>
 
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <UAvatar :src="game?.whitePlayer?.avatar || undefined" size="sm" />
-            <div>
-              <p class="text-sm font-semibold">{{ game?.whitePlayer?.username }}</p>
+            <div class="min-w-0">
+              <p class="truncate text-sm font-semibold">{{ game?.whitePlayer?.username }}</p>
               <p class="text-xs text-muted">
                 {{ $t('accuracy') }}: <span :class="whiteAccuracy >= 80 ? 'text-success' : whiteAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ whiteAccuracy }}%</span>
               </p>
             </div>
           </div>
-          <div class="text-sm text-muted">{{ $t('result') }}: {{ game?.result }}</div>
+          <div class="shrink-0 text-xs text-muted">{{ $t('result') }}: {{ game?.result }}</div>
         </div>
 
         <AnalysisEvalGraph
           :evaluations="analysis.evaluations"
           :current-index="currentMoveIndex"
           :width="boardSize"
+          class="hidden lg:block"
         />
 
-        <div class="flex gap-2">
-          <UButton icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move" @click="goFirst" />
-          <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" @click="goPrev" />
-          <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" @click="goNext" />
-          <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" @click="goLast" />
+        <div class="flex gap-1.5">
+          <UButton icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move" class="flex-1" @click="goFirst" />
+          <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" class="flex-1" @click="goPrev" />
+          <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" class="flex-1" @click="goNext" />
+          <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" class="flex-1" @click="goLast" />
         </div>
       </div>
 
-      <div class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
+      <div class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0 lg:gap-4">
         <div v-if="currentAnalyzedMove" class="rounded-lg bg-elevated p-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ currentAnalyzedMove.san }}</span>
@@ -140,7 +139,7 @@ const boardApi = ref<InstanceType<typeof BoardApi> | null>(null)
 const boardConfig = { viewOnly: true }
 
 const gameContainer = ref<HTMLElement | null>(null)
-const { boardSize } = useBoardSize(gameContainer, 160)
+const { boardSize } = useBoardSize(gameContainer, 120)
 
 const {
   analysis, status, progress, currentMoveIndex, positions,

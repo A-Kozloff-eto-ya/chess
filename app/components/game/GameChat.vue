@@ -2,7 +2,7 @@
   <div class="flex flex-col rounded-lg border border-default">
     <div class="flex items-center justify-between border-b border-default px-3 py-2">
       <span class="text-sm font-medium text-default">{{ $t('chat') }}</span>
-      <UButton icon="i-lucide-message-square" variant="ghost" size="xs" @click="expanded = !expanded" />
+      <UButton icon="i-lucide-message-square" variant="ghost" size="sm" @click="expanded = !expanded" />
     </div>
     <div v-if="expanded" class="flex flex-col">
       <div ref="messagesEl" class="flex max-h-48 flex-col gap-1 overflow-y-auto p-3">

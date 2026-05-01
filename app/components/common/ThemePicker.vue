@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
+const { t } = useI18n()
 const open = ref(false)
 const copiedCSS = ref(false)
 const copiedConfig = ref(false)
@@ -48,10 +49,10 @@ const {
 
     <template #content>
       <fieldset>
-        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">Primary</legend>
+        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">{{ $t('themePrimary') }}</legend>
         <div class="grid grid-cols-3 gap-1 -mx-2">
           <CommonThemePickerButton
-            label="Black"
+            :label="$t('themeBlack')"
             :selected="blackAsPrimary"
             @click="setBlackAsPrimary(true)"
           >
@@ -62,7 +63,7 @@ const {
           <CommonThemePickerButton
             v-for="color in primaryColors"
             :key="color"
-            :label="color"
+            :label="$t('color_' + color)"
             :chip="color"
             :selected="!blackAsPrimary && primary === color"
             @click="primary = color"
@@ -71,12 +72,12 @@ const {
       </fieldset>
 
       <fieldset>
-        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">Neutral</legend>
+        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">{{ $t('themeNeutral') }}</legend>
         <div class="grid grid-cols-3 gap-1 -mx-2">
           <CommonThemePickerButton
             v-for="color in neutralColors"
             :key="color"
-            :label="color"
+            :label="$t('color_' + color)"
             :chip="color"
             :selected="neutral === color"
             @click="neutral = color"
@@ -85,7 +86,7 @@ const {
       </fieldset>
 
       <fieldset>
-        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">Radius</legend>
+        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">{{ $t('themeRadius') }}</legend>
         <div class="grid grid-cols-5 gap-1 -mx-2">
           <CommonThemePickerButton
             v-for="r in radiuses"
@@ -99,22 +100,22 @@ const {
       </fieldset>
 
       <fieldset>
-        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">Color Mode</legend>
+        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">{{ $t('themeColorMode') }}</legend>
         <div class="grid grid-cols-3 gap-1 -mx-2">
           <CommonThemePickerButton
-            label="Light"
+            :label="$t('themeLight')"
             icon="i-lucide-sun"
             :selected="colorMode.preference === 'light'"
             @click="mode = 'light'"
           />
           <CommonThemePickerButton
-            label="Dark"
+            :label="$t('themeDark')"
             icon="i-lucide-moon"
             :selected="colorMode.preference === 'dark'"
             @click="mode = 'dark'"
           />
           <CommonThemePickerButton
-            label="System"
+            :label="$t('themeSystem')"
             icon="i-lucide-monitor"
             :selected="colorMode.preference === 'system'"
             @click="mode = 'system'"
@@ -123,7 +124,7 @@ const {
       </fieldset>
 
       <fieldset v-if="hasCSSChanges || hasConfigChanges">
-        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">Export</legend>
+        <legend class="text-[11px] leading-none font-semibold mb-2 select-none">{{ $t('themeExport') }}</legend>
         <div class="flex items-center justify-between gap-1 -mx-2">
           <UButton
             v-if="hasCSSChanges"
@@ -145,7 +146,7 @@ const {
             :icon="copiedConfig ? 'i-lucide-copy-check' : 'i-lucide-copy'"
             @click="copyToClipboard(exportConfig(), 'config')"
           />
-          <UTooltip text="Reset theme">
+          <UTooltip :text="$t('themeResetTheme')">
             <UButton
               color="neutral"
               variant="outline"

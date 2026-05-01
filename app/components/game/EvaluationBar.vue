@@ -1,14 +1,14 @@
 <template>
-  <div class="eval-bar-container">
+  <div class="eval-bar-container" :class="{ 'eval-compact': compact }">
     <div class="eval-bar-track">
       <div
         class="eval-bar-black"
         :style="{ height: `${blackPercent}%` }"
       >
-        <span v-if="evalLabel" class="eval-label eval-label-black">{{ evalLabel }}</span>
+        <span v-if="evalLabel && !compact" class="eval-label eval-label-black">{{ evalLabel }}</span>
       </div>
       <div class="eval-bar-white">
-        <span v-if="evalLabel" class="eval-label eval-label-white">{{ evalLabel }}</span>
+        <span v-if="evalLabel && !compact" class="eval-label eval-label-white">{{ evalLabel }}</span>
       </div>
     </div>
   </div>
@@ -18,6 +18,7 @@
 const props = defineProps<{
   evaluation: { type: 'cp' | 'mate'; value: number } | null
   flipped?: boolean
+  compact?: boolean
 }>()
 
 const evalLabel = computed(() => {
@@ -59,6 +60,11 @@ const blackPercent = computed(() => {
   overflow: hidden;
   border: 1px solid var(--ui-border);
   align-self: stretch;
+}
+
+.eval-compact {
+  width: 16px;
+  border-radius: 2px;
 }
 
 .eval-bar-track {

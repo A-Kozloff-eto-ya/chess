@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, text, serial, timestamp, integer, pgEnum, jsonb } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 export const gameStatusEnum = pgEnum('game_status', ['waiting', 'active', 'completed', 'abandoned'])
@@ -16,6 +16,7 @@ export const users = pgTable('users', {
   providerId: text(),
   emailVerified: text('emailVerified').default('false'),
   lastSeenAt: timestamp('lastSeenAt'),
+  settings: jsonb().default({}),
   createdAt: timestamp().notNull().defaultNow(),
 })
 

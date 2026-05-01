@@ -1,29 +1,24 @@
 <template>
-  <div v-if="gameData && colorReady" ref="gameContainer" class="flex h-full gap-4 lg:flex-row">
-    <div class="flex flex-1 flex-col items-center gap-2 min-w-0 min-h-0">
-      <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
+  <div v-if="gameData && colorReady" ref="gameContainer" class="flex h-full flex-col lg:h-auto lg:flex-row lg:gap-4">
+    <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2 lg:px-0">
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <div class="relative">
             <UAvatar :src="opponentInfo?.avatar || undefined" size="sm" />
             <span v-if="opponentInfo && isOnline(opponentInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-success" />
             <span v-else-if="opponentInfo && getStatus(opponentInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-muted" />
           </div>
-          <div>
-            <p class="font-semibold">{{ opponentInfo?.username || (isWaiting ? $t('waitingForOpponent') : $t('opponent')) }}</p>
-            <p class="text-sm text-muted">{{ opponentInfo?.rating || '???' }}</p>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold lg:text-base">{{ opponentInfo?.username || (isWaiting ? $t('waitingForOpponent') : $t('opponent')) }}</p>
+            <p class="text-xs text-muted lg:text-sm">{{ opponentInfo?.rating || '???' }}</p>
           </div>
         </div>
-        <div v-if="!isWaiting" class="font-mono text-lg" :class="opponentTimeClass" role="timer" :aria-label="`Opponent time: ${formatTime(opponentTime)}`">
+        <div v-if="!isWaiting" class="font-mono text-xl lg:text-lg" :class="opponentTimeClass" role="timer" :aria-label="`Opponent time: ${formatTime(opponentTime)}`">
           {{ formatTime(opponentTime) }}
         </div>
       </div>
 
-      <div class="board-area flex w-full gap-2" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
-        <GameEvaluationBar
-          :evaluation="evaluation"
-          :flipped="playerColor === 'black'"
-        />
-        <div class="flex-1 min-w-0 min-h-0">
+      <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
           <ClientOnly>
             <TheChessboard
               :board-config="boardConfig"
@@ -33,78 +28,101 @@
               @move="onBoardMove"
             />
           </ClientOnly>
-        </div>
       </div>
 
-      <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <div class="relative">
             <UAvatar :src="playerInfo?.avatar || undefined" size="sm" />
             <span v-if="playerInfo && isOnline(playerInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-success" />
             <span v-else-if="playerInfo && getStatus(playerInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-muted" />
           </div>
-          <div>
-            <p class="font-semibold">{{ playerInfo?.username || $t('you') }}</p>
-            <p class="text-sm text-muted">{{ playerInfo?.rating || '???' }}</p>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-semibold lg:text-base">{{ playerInfo?.username || $t('you') }}</p>
+            <p class="text-xs text-muted lg:text-sm">{{ playerInfo?.rating || '???' }}</p>
           </div>
         </div>
-        <div v-if="!isWaiting" class="font-mono text-lg" :class="playerTimeClass" role="timer" :aria-label="`Your time: ${formatTime(playerTime)}`">
+        <div v-if="!isWaiting" class="font-mono text-xl lg:text-lg" :class="playerTimeClass" role="timer" :aria-label="`Your time: ${formatTime(playerTime)}`">
           {{ formatTime(playerTime) }}
         </div>
       </div>
     </div>
 
-    <div class="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-      <div v-if="isWaiting" class="rounded-lg border border-dashed border-default p-6 text-center">
-        <UIcon name="i-lucide-loader-2" class="mx-auto mb-3 size-8 animate-spin text-muted" />
-        <p class="font-semibold">{{ $t('waitingForOpponentTitle') }}</p>
-        <p class="mt-2 text-sm text-muted">{{ $t('shareThisCode') }}</p>
-        <div class="mt-2 flex items-center justify-center gap-2">
-          <code class="rounded bg-elevated px-3 py-1.5 text-xl font-bold tracking-widest text-primary">{{ inviteCode }}</code>
-          <UButton icon="i-lucide-copy" size="sm" variant="ghost" aria-label="Copy invite code" @click="copyInviteCode" />
-        </div>
-        <p class="mt-3 text-xs text-muted">{{ $t('orInviteFriend') }}</p>
-        <UButton :label="$t('inviteFriend')" icon="i-lucide-user-plus" variant="outline" size="sm" class="mt-2" @click="showInviteModal = true" />
-      </div>
-
-      <div v-if="!isWaiting && !gameOver" class="text-center text-sm font-medium" :class="isMyTurn ? 'text-success' : 'text-muted'" role="status">
-        {{ isMyTurn ? $t('yourTurn') : $t('opponentsTurn') }}
-      </div>
-
-      <GameMoveHistory :moves="moves" />
-      <GameChat v-if="!isWaiting" :messages="chatMessages" :disabled="gameOver" @send="sendChatMessage" />
-      <GameControls
-        v-if="!isWaiting"
+    <div class="hidden lg:flex lg:w-80 lg:shrink-0 lg:flex-col lg:gap-4">
+      <DesktopSidebar
+        :is-waiting="isWaiting"
+        :game-over="gameOver"
         :can-abort="canAbort"
-        :disabled="gameOver"
+        :moves="moves"
+        :chat-messages="chatMessages"
+        :invite-code="inviteCode"
+        :is-my-turn="isMyTurn"
+        :game-over-text="gameOverText"
+        :rematch-offer-sent="rematchOfferSent"
+        :rematch-offer-received="rematchOfferReceived"
+        :rematch-declined="rematchDeclined"
+        :game-id="gameId"
         @resign="doResign"
         @abort="doAbort"
         @offer-draw="doOfferDraw"
+        @send="sendChatMessage"
+        @offer-rematch="offerRematch"
+        @accept-rematch="acceptRematch"
+        @decline-rematch="declineRematch"
+        @show-invite="showInviteModal = true"
+        @copy-invite="copyInviteCode"
       />
-      <div v-if="gameOver" class="rounded-lg bg-elevated p-4 text-center" role="alert">
-        <p class="text-lg font-bold">{{ gameOverText }}</p>
-        <div class="mt-3 flex flex-col gap-2">
-          <UButton :label="$t('analyzeGame')" icon="i-lucide-microscope" color="neutral" variant="outline" class="w-full" @click="navigateTo(`/analyze/${gameId}`)" />
+    </div>
+
+    <div class="mt-2 lg:hidden">
+      <div v-if="isWaiting" class="rounded-lg border border-dashed border-default p-4 text-center">
+        <UIcon name="i-lucide-loader-2" class="mx-auto mb-2 size-6 animate-spin text-muted" />
+        <p class="text-sm font-semibold">{{ $t('waitingForOpponentTitle') }}</p>
+        <div class="mt-2 flex items-center justify-center gap-2">
+          <code class="rounded bg-elevated px-2 py-1 text-lg font-bold tracking-widest text-primary">{{ inviteCode }}</code>
+          <UButton icon="i-lucide-copy" size="sm" variant="ghost" @click="copyInviteCode" />
+        </div>
+        <UButton :label="$t('inviteFriend')" icon="i-lucide-user-plus" variant="outline" size="sm" class="mt-2" @click="showInviteModal = true" />
+      </div>
+
+      <div v-else-if="gameOver" class="rounded-lg bg-elevated p-3 text-center">
+        <p class="text-base font-bold">{{ gameOverText }}</p>
+        <div class="mt-2 flex flex-col gap-2">
+          <UButton :label="$t('analyzeGame')" icon="i-lucide-microscope" color="neutral" variant="outline" size="sm" class="w-full" @click="navigateTo(`/analyze/${gameId}`)" />
           <div v-if="!rematchOfferSent && !rematchOfferReceived && !rematchDeclined" class="flex gap-2">
-            <UButton :label="$t('rematch')" icon="i-lucide-refresh-cw" class="flex-1" @click="offerRematch" />
-            <UButton :label="$t('newGame')" variant="outline" class="flex-1" @click="navigateTo('/')" />
+            <UButton :label="$t('rematch')" icon="i-lucide-refresh-cw" size="sm" class="flex-1" @click="offerRematch" />
+            <UButton :label="$t('newGame')" size="sm" variant="outline" class="flex-1" @click="navigateTo('/')" />
           </div>
-          <div v-if="rematchOfferSent && !rematchDeclined" class="text-sm text-muted">
+          <div v-if="rematchOfferReceived" class="flex gap-2">
+            <UButton :label="$t('accept')" size="sm" color="success" class="flex-1" @click="acceptRematch" />
+            <UButton :label="$t('decline')" size="sm" variant="outline" class="flex-1" @click="declineRematch" />
+          </div>
+          <div v-if="rematchOfferSent && !rematchDeclined" class="text-xs text-muted">
             <UIcon name="i-lucide-loader-2" class="mr-1 inline-block animate-spin" />
             {{ $t('rematchOffered') }}
           </div>
-          <div v-if="rematchDeclined" class="text-sm text-error">
-            {{ $t('rematchDeclined') }}
-          </div>
-          <div v-if="rematchOfferReceived" class="flex flex-col gap-2">
-            <p class="text-sm text-primary">{{ $t('opponentWantsRematch') }}</p>
-            <div class="flex gap-2">
-              <UButton :label="$t('accept')" color="success" class="flex-1" @click="acceptRematch" />
-              <UButton :label="$t('decline')" variant="outline" class="flex-1" @click="declineRematch" />
-            </div>
-          </div>
-          <UButton v-if="rematchOfferSent || rematchDeclined" :label="$t('newGame')" variant="outline" class="w-full" @click="navigateTo('/')" />
+          <div v-if="rematchDeclined" class="text-xs text-error">{{ $t('rematchDeclined') }}</div>
+          <UButton v-if="rematchOfferSent || rematchDeclined" :label="$t('newGame')" size="sm" variant="outline" class="w-full" @click="navigateTo('/')" />
         </div>
+      </div>
+
+      <div v-else class="flex flex-col gap-2">
+        <div class="text-center text-xs font-medium" :class="isMyTurn ? 'text-success' : 'text-muted'" role="status">
+          {{ isMyTurn ? $t('yourTurn') : $t('opponentsTurn') }}
+        </div>
+        <GameControls
+          :can-abort="canAbort"
+          :disabled="gameOver"
+          @resign="doResign"
+          @abort="doAbort"
+          @offer-draw="doOfferDraw"
+        />
+        <MobileGameTabs
+          :moves="moves"
+          :chat-messages="chatMessages"
+          :game-over="gameOver"
+          @send="sendChatMessage"
+        />
       </div>
     </div>
 

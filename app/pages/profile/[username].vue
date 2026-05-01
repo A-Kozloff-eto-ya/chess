@@ -221,7 +221,8 @@ const saveProfile = async () => {
       method: 'PUT',
       body: editForm,
     })
-    profile.value = { ...profile.value!, ...updated }
+    const { id, username: uname, avatar, bio, rating, createdAt } = updated as any
+    profile.value = { ...profile.value!, id, username: uname, avatar, bio, rating, createdAt }
     editing.value = false
     toast.add({ title: t('profileUpdated'), color: 'success' })
     if (editForm.username !== profile.value!.username) {
