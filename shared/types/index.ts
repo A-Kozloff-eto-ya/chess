@@ -141,6 +141,9 @@ export type ServerMessage =
   | { type: 'error'; message: string }
   | { type: 'friend_request'; requestId: number; from: UserInfo }
   | { type: 'friend_accepted'; friend: UserInfo }
+  | { type: 'friend_declined'; by: number }
+  | { type: 'friend_request_cancelled'; by: number }
+  | { type: 'friend_removed'; by: number }
   | { type: 'game_invite'; from: UserInfo; gameId: string; inviteCode: string }
   | { type: 'clock_sync'; gameId: string; whiteTime: number; blackTime: number }
   | { type: 'user_online'; userId: number }

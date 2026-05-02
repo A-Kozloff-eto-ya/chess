@@ -1,6 +1,6 @@
-import type { ServerMessage, ClientMessage } from '~/types'
+import type { ClientMessage } from '~/types'
 
-type MessageHandler = (msg: ServerMessage) => void
+type MessageHandler = (msg: any) => void
 
 const dev = import.meta.dev
 
@@ -9,11 +9,18 @@ function getOrCreateSharedWs() {
   const isConnected = useState('shared-ws-connected', () => false)
   const reconnectAttempts = useState('shared-ws-reconnect', () => 0)
   const initialized = useState('shared-ws-init', () => false)
-  const handlers: MessageHandler[] = []
+  const typeHandlers = new Map<string, Set<MessageHandler>>()
+  const wildcardHandlers = new Set<MessageHandler>()
   const messageQueue: ClientMessage[] = []
   const maxReconnectAttempts = 10
 
-  let connectFn: (() => void) | null = null
+  const dispatch = (msg: { type: string; [key: string]: any }) => {
+    const typed = typeHandlers.get(msg.type)
+    if (typed) {
+      for (const h of typed) h(msg)
+    }
+    for (const h of wildcardHandlers) h(msg)
+  }
 
   const connect = () => {
     if (!import.meta.client) return
@@ -40,9 +47,7 @@ function getOrCreateSharedWs() {
       try {
         const msg = JSON.parse(event.data)
         if (dev) console.log('[WS] Received:', msg.type)
-        for (const handler of handlers) {
-          handler(msg)
-        }
+        dispatch(msg)
       } catch (e) {
         console.error('[WS] Failed to parse:', e)
       }
@@ -75,15 +80,24 @@ function getOrCreateSharedWs() {
     }
   }
 
-  const onMessage = (handler: MessageHandler) => {
-    handlers.push(handler)
+  const on = (type: string, handler: MessageHandler) => {
+    if (!typeHandlers.has(type)) {
+      typeHandlers.set(type, new Set())
+    }
+    typeHandlers.get(type)!.add(handler)
     return () => {
-      const idx = handlers.indexOf(handler)
-      if (idx > -1) handlers.splice(idx, 1)
+      typeHandlers.get(type)?.delete(handler)
     }
   }
 
-  return { ws, isConnected, initialized, handlers, messageQueue, connect, send, onMessage }
+  const onAny = (handler: MessageHandler) => {
+    wildcardHandlers.add(handler)
+    return () => {
+      wildcardHandlers.delete(handler)
+    }
+  }
+
+  return { ws, isConnected, initialized, messageQueue, connect, send, on, onAny, dispatch }
 }
 
 let shared: ReturnType<typeof getOrCreateSharedWs> | null = null
@@ -94,7 +108,7 @@ function getSharedWs() {
 }
 
 export function useSharedWebSocket() {
-  const { ws, isConnected, connect, send, onMessage } = getSharedWs()
+  const { ws, isConnected, connect, send, on, onAny } = getSharedWs()
 
   const initOnce = () => {
     connect()
@@ -106,6 +120,7 @@ export function useSharedWebSocket() {
     connect,
     initOnce,
     send,
-    onMessage,
+    on,
+    onAny,
   }
 }

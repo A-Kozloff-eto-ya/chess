@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, text, serial, timestamp, integer, pgEnum, jsonb, uniqueIndex } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 export const gameStatusEnum = pgEnum('game_status', ['waiting', 'active', 'completed', 'abandoned'])
@@ -45,7 +45,9 @@ export const friendships = pgTable('friendships', {
   status: friendshipStatusEnum().notNull().default('pending'),
   createdAt: timestamp().notNull().defaultNow(),
   respondedAt: timestamp(),
-})
+}, (table) => [
+  uniqueIndex('friendships_pair_unique').on(table.requesterId, table.addresseeId),
+])
 
 export const chatMessages = pgTable('chat_messages', {
   id: serial().primaryKey(),

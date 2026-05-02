@@ -1,8 +1,8 @@
-import type { ServerMessage, ClientMessage } from '~/types'
+import type { ClientMessage } from '~/types'
 import { useSharedWebSocket } from './useSharedWebSocket'
 
 export function useChessWebSocket() {
-  const { isConnected, initOnce, send, onMessage } = useSharedWebSocket()
+  const { isConnected, initOnce, send, on } = useSharedWebSocket()
 
   const joinGame = (gameId: string) => send({ type: 'join', gameId })
   const spectateGame = (gameId: string) => send({ type: 'spectate', gameId })
@@ -25,7 +25,7 @@ export function useChessWebSocket() {
     connect: initOnce,
     disconnect: () => {},
     send,
-    onMessage,
+    on,
     joinGame,
     spectateGame,
     sendMove,

@@ -1,45 +1,24 @@
 import type { UserInfo, FriendsResponse, FetchError } from '../../shared/types'
+import type { NotificationsState, FriendshipEvent, FriendRequestNotification } from '../types/notifications'
 import { useSharedWebSocket } from './useSharedWebSocket'
 
-export interface FriendRequestNotification {
-  requestId: number
-  from: UserInfo
-}
-
-interface NotificationsState {
-  friendRequests: FriendRequestNotification[]
-  loaded: boolean
-}
-
-interface FriendshipEvent {
-  type: string | null
-  userId: number | null
-}
+export type { FriendRequestNotification, FriendshipEvent } from '../types/notifications'
 
 export function useNotifications() {
   const { loggedIn } = useUserSession()
   const toast = useToast()
 
-  const notificationsState = useState<NotificationsState>('notif-state', () => ({
-    friendRequests: [],
-    loaded: false,
-  }))
-
-  const friendshipEvents = useState<FriendshipEvent>('notif-events', () => ({
-    type: null,
-    userId: null,
-  }))
+  const notificationsState = useState<NotificationsState>('notif-state')
+  const friendshipEvents = useState<FriendshipEvent>('notif-events')
 
   const state = notificationsState.value
-  const events = friendshipEvents.value
-
   const pendingCount = computed(() => state.friendRequests.length)
 
   const loadPendingRequests = async () => {
     if (state.loaded) return
     try {
       const data = await $fetch<FriendsResponse>('/api/friends')
-      state.friendRequests = data.pending.map((p) => ({
+      state.friendRequests = data.pending.map((p: { id: number; from: UserInfo }) => ({
         requestId: p.id,
         from: p.from,
       }))
@@ -56,7 +35,7 @@ export function useNotifications() {
         body: { requestId },
       })
       state.friendRequests = state.friendRequests.filter(
-        (r) => r.requestId !== requestId
+        (r: FriendRequestNotification) => r.requestId !== requestId
       )
       toast.add({ title: 'Friend request accepted!', color: 'success' })
     } catch (e) {
@@ -72,7 +51,7 @@ export function useNotifications() {
         body: { requestId },
       })
       state.friendRequests = state.friendRequests.filter(
-        (r) => r.requestId !== requestId
+        (r: FriendRequestNotification) => r.requestId !== requestId
       )
     } catch (e) {
       const err = e as FetchError
@@ -80,72 +59,30 @@ export function useNotifications() {
     }
   }
 
-  const { send, onMessage, initOnce } = useSharedWebSocket()
+  const { send } = useSharedWebSocket()
 
   const sendGameInvite = (toUserId: number, gameId: string, inviteCode: string) => {
     send({ type: 'game_invite', toUserId, gameId, inviteCode })
   }
 
-  const onFriendshipChange = (callback: (type: string, userId: number) => void) => {
+  const onFriendshipChange = (callback: (type: string, userId: number, data?: any) => void) => {
     watch(
-      () => friendshipEvents.value.type,
-      (type) => {
+      () => friendshipEvents.value.id,
+      () => {
         const ev = friendshipEvents.value
-        if (type && ev.userId) {
-          callback(type, ev.userId)
-          ev.type = null
-          ev.userId = null
+        if (ev.type && ev.userId) {
+          callback(ev.type, ev.userId, ev.data)
         }
       }
     )
   }
 
-  const cleanup = onMessage((msg) => {
-    if (msg.type === 'friend_request') {
-      state.friendRequests.push({
-        requestId: msg.requestId,
-        from: msg.from,
-      })
-      events.type = 'friend_request'
-      events.userId = msg.from.id
-    } else if (msg.type === 'friend_accepted') {
-      state.friendRequests = state.friendRequests.filter(
-        (r) => r.from.id !== msg.friend.id
-      )
-      events.type = 'friend_accepted'
-      events.userId = msg.friend.id
-    } else if (msg.type === 'game_invite') {
-      events.type = 'game_invite'
-      events.userId = msg.from.id
-    }
-  })
-
-  onMounted(async () => {
-    if (loggedIn.value) {
-      await loadPendingRequests()
-      initOnce()
-    }
-  })
-
-  watch(loggedIn, async (val) => {
-    if (val) {
-      state.loaded = false
-      await loadPendingRequests()
-      initOnce()
-    } else {
-      state.friendRequests = []
-      state.loaded = false
-    }
-  })
-
-  onUnmounted(cleanup)
-
   return {
     friendRequests: computed(() => state.friendRequests),
+    friendshipEvents,
     pendingCount,
     acceptRequest,
     declineRequest,
-    onNotification: onMessage,
     sendGameInvite,
     onFriendshipChange,
   }

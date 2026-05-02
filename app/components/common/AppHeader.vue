@@ -12,7 +12,6 @@
         <UButton to="/play-ai" variant="ghost" :label="$t('playAI')" icon="i-lucide-bot" />
 
         <template v-if="loggedIn">
-          <CommonNotificationsBell />
           <UButton to="/profile/me" variant="ghost" :label="user?.username || $t('profile')" icon="i-lucide-user" />
           <UDropdownMenu :items="menuItems">
             <UButton icon="i-lucide-menu" variant="ghost" :aria-label="$t('menu')" />
@@ -23,14 +22,32 @@
 
       </nav>
 
-      <div class="flex items-center gap-2 lg:hidden">
+      <div class="flex items-center gap-2">
         <CommonNotificationsBell v-if="loggedIn" />
+
+        <UButton
+          v-if="loggedIn"
+          to="/profile/me"
+          variant="ghost"
+          icon="i-lucide-user"
+          class="hidden lg:flex"
+          :label="user?.username || $t('profile')"
+        />
+        <UButton
+          v-else
+          :label="$t('signIn')"
+          icon="i-lucide-log-in"
+          @click="showLogin = true"
+          class="hidden lg:flex"
+        />
+
         <UButton
           v-if="loggedIn"
           to="/profile/me"
           variant="ghost"
           icon="i-lucide-user"
           size="lg"
+          class="lg:hidden"
           :aria-label="$t('profile')"
         />
         <UButton
@@ -38,9 +55,11 @@
           :label="$t('signIn')"
           icon="i-lucide-log-in"
           size="lg"
+          class="lg:hidden"
           @click="showLogin = true"
         />
-        <UButton icon="i-lucide-menu" variant="ghost" size="lg" :aria-label="$t('menu')" @click="drawerOpen = true" />
+
+        <UButton icon="i-lucide-menu" variant="ghost" size="lg" class="lg:hidden" :aria-label="$t('menu')" @click="drawerOpen = true" />
       </div>
     </div>
 

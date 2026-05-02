@@ -15,14 +15,22 @@ export default defineEventHandler(async (event) => {
 
   const { requestId } = parsed.data
 
-    await db.update(friendships).set({
-    status: 'declined',
-    respondedAt: new Date(),
-  }).where(and(
+  const request = await db.select({ requesterId: friendships.requesterId }).from(friendships).where(and(
     eq(friendships.id, requestId),
     eq(friendships.addresseeId, session.user.id),
     eq(friendships.status, 'pending'),
-  )).execute()
+  )).then(r => r[0])
+
+  if (!request) {
+    throw createError({ statusCode: 404, statusMessage: 'Friend request not found' })
+  }
+
+  await db.update(friendships).set({
+    status: 'declined',
+    respondedAt: new Date(),
+  }).where(eq(friendships.id, requestId)).execute()
+
+  sendToUser(request.requesterId, { type: 'friend_declined', by: session.user.id })
 
   return { success: true }
 })

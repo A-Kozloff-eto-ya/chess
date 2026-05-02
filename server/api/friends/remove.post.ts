@@ -15,10 +15,12 @@ export default defineEventHandler(async (event) => {
 
   const { userId } = parsed.data
 
-    await db.delete(friendships).where(or(
+  await db.delete(friendships).where(or(
     and(eq(friendships.requesterId, session.user.id), eq(friendships.addresseeId, userId)),
     and(eq(friendships.requesterId, userId), eq(friendships.addresseeId, session.user.id)),
   )).execute()
+
+  sendToUser(userId, { type: 'friend_removed', by: session.user.id })
 
   return { success: true }
 })

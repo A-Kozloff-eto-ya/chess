@@ -1,4 +1,3 @@
-import type { ServerMessage } from '~/types'
 import { parseTimeControl } from '~/../shared/constants'
 
 export interface GameResponse {
@@ -17,7 +16,7 @@ export function useGameSession(gameId: string) {
   const { user, fetch: fetchSession } = useUserSession()
   const { t } = useI18n()
   const toast = useToast()
-  const { joinGame, sendMove, resign, offerDraw, acceptDraw, abortGame, offerRematch, acceptRematch, declineRematch, sendChat, leaveGame, onMessage } = useChessWebSocket()
+  const { joinGame, sendMove, resign, offerDraw, acceptDraw, abortGame, offerRematch, acceptRematch, declineRematch, sendChat, leaveGame, on } = useChessWebSocket()
   const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
   const sounds = useSounds()
 
@@ -164,128 +163,126 @@ export function useGameSession(gameId: string) {
     joinGame(gameId)
   })
 
-  const offMessage = onMessage((msg: ServerMessage) => {
-    switch (msg.type) {
-      case 'joined':
-        if (msg.opponent) {
-          isWaiting.value = false
-        }
-        if (msg.whiteTime != null) whiteTime.value = msg.whiteTime
-        if (msg.blackTime != null) blackTime.value = msg.blackTime
-        if (msg.moveCount) serverMoveCount.value = msg.moveCount
-        startTimer(activeTurn)
-        if (msg.chatHistory?.length) {
-          const myId = user.value?.id
-          chatMessages.value = msg.chatHistory.map(m => ({
-            from: m.from,
-            message: m.message,
-            mine: m.userId === myId,
-          }))
-        }
-        break
+  const cleanups: (() => void)[] = []
 
-      case 'opponent_joined':
-        isWaiting.value = false
-        if (playerColor.value === 'white') {
-          gameData.value = { ...gameData.value!, blackPlayer: msg.opponent }
-        } else {
-          gameData.value = { ...gameData.value!, whitePlayer: msg.opponent }
-        }
-        startTimer(activeTurn)
-        toast.add({ title: t('joinedGame', { username: msg.opponent.username }), color: 'success' })
-        break
-
-      case 'state_update':
-        if (msg.moveCount > serverMoveCount.value) {
-          serverMoveCount.value = msg.moveCount
-          if (msg.lastMove) {
-            moves.value.push(msg.lastMove.san)
-            pushEvalMove(msg.lastMove.san)
-          }
-
-          if (pendingLocalMove) {
-            pendingLocalMove = false
-          } else if (msg.lastMove && boardApi.value) {
-            if (msg.lastMove.captured) {
-              sounds.capture()
-            } else {
-              sounds.move()
-            }
-            applyingRemoteMove = true
-            boardApi.value.move(
-              msg.lastMove.from,
-              msg.lastMove.to,
-              msg.lastMove.promotion,
-            )
-            nextTick(() => { applyingRemoteMove = false })
-          }
-        }
-
-        whiteTime.value = msg.whiteTime
-        blackTime.value = msg.blackTime
-        break
-
-      case 'move_rejected':
-        pendingLocalMove = false
-        if (boardApi.value?.undoLastMove) {
-          boardApi.value.undoLastMove()
-        }
-        toast.add({ title: msg.reason, color: 'error' })
-        break
-
-      case 'game_over':
-        gameOver.value = true
-        gameData.value = { ...gameData.value!, result: msg.result }
-        if (msg.reason === 'abort') {
-          gameData.value = { ...gameData.value!, result: '*' }
-        }
-        stopTimer()
-        if (msg.result === '1-0' || msg.result === '0-1') {
-          sounds.checkmate()
-        }
-        fetchSession()
-        break
-
-      case 'draw_offered':
-        toast.add({ title: t('drawOfferedBy', { username: msg.by }), color: 'info', actions: [{
-          label: t('accept'),
-          onClick: () => acceptDraw(gameId),
-        }]})
-        break
-
-      case 'opponent_disconnected':
-        toast.add({ title: t('opponentDisconnected'), color: 'warning' })
-        break
-
-      case 'rematch_offered':
-        rematchOfferReceived.value = true
-        rematchDeclined.value = false
-        break
-
-      case 'rematch_accepted':
-        navigateTo(`/play/${msg.newGameId}`)
-        break
-
-      case 'rematch_declined':
-        rematchOfferSent.value = false
-        rematchDeclined.value = true
-        break
-
-      case 'chat':
-        chatMessages.value.push({ from: msg.from, message: msg.message, mine: false })
-        break
-
-      case 'clock_sync':
-        whiteTime.value = msg.whiteTime
-        blackTime.value = msg.blackTime
-        break
+  cleanups.push(on('joined', (msg: any) => {
+    if (msg.opponent) {
+      isWaiting.value = false
     }
-  })
+    if (msg.whiteTime != null) whiteTime.value = msg.whiteTime
+    if (msg.blackTime != null) blackTime.value = msg.blackTime
+    if (msg.moveCount) serverMoveCount.value = msg.moveCount
+    startTimer(activeTurn)
+    if (msg.chatHistory?.length) {
+      const myId = user.value?.id
+      chatMessages.value = msg.chatHistory.map((m: any) => ({
+        from: m.from,
+        message: m.message,
+        mine: m.userId === myId,
+      }))
+    }
+  }))
+
+  cleanups.push(on('opponent_joined', (msg: any) => {
+    isWaiting.value = false
+    if (playerColor.value === 'white') {
+      gameData.value = { ...gameData.value!, blackPlayer: msg.opponent }
+    } else {
+      gameData.value = { ...gameData.value!, whitePlayer: msg.opponent }
+    }
+    startTimer(activeTurn)
+    toast.add({ title: t('joinedGame', { username: msg.opponent.username }), color: 'success' })
+  }))
+
+  cleanups.push(on('state_update', (msg: any) => {
+    if (msg.moveCount > serverMoveCount.value) {
+      serverMoveCount.value = msg.moveCount
+      if (msg.lastMove) {
+        moves.value.push(msg.lastMove.san)
+        pushEvalMove(msg.lastMove.san)
+      }
+
+      if (pendingLocalMove) {
+        pendingLocalMove = false
+      } else if (msg.lastMove && boardApi.value) {
+        if (msg.lastMove.captured) {
+          sounds.capture()
+        } else {
+          sounds.move()
+        }
+        applyingRemoteMove = true
+        boardApi.value.move(
+          msg.lastMove.from,
+          msg.lastMove.to,
+          msg.lastMove.promotion,
+        )
+        nextTick(() => { applyingRemoteMove = false })
+      }
+    }
+
+    whiteTime.value = msg.whiteTime
+    blackTime.value = msg.blackTime
+  }))
+
+  cleanups.push(on('move_rejected', (msg: any) => {
+    pendingLocalMove = false
+    if (boardApi.value?.undoLastMove) {
+      boardApi.value.undoLastMove()
+    }
+    toast.add({ title: msg.reason, color: 'error' })
+  }))
+
+  cleanups.push(on('game_over', (msg: any) => {
+    gameOver.value = true
+    gameData.value = { ...gameData.value!, result: msg.result }
+    if (msg.reason === 'abort') {
+      gameData.value = { ...gameData.value!, result: '*' }
+    }
+    stopTimer()
+    if (msg.result === '1-0' || msg.result === '0-1') {
+      sounds.checkmate()
+    }
+    fetchSession()
+  }))
+
+  cleanups.push(on('draw_offered', (msg: any) => {
+    toast.add({ title: t('drawOfferedBy', { username: msg.by }), color: 'info', actions: [{
+      label: t('accept'),
+      onClick: () => acceptDraw(gameId),
+    }]})
+  }))
+
+  cleanups.push(on('opponent_disconnected', () => {
+    toast.add({ title: t('opponentDisconnected'), color: 'warning' })
+  }))
+
+  cleanups.push(on('rematch_offered', () => {
+    rematchOfferReceived.value = true
+    rematchDeclined.value = false
+  }))
+
+  cleanups.push(on('rematch_accepted', (msg: any) => {
+    navigateTo(`/play/${msg.newGameId}`)
+  }))
+
+  cleanups.push(on('rematch_declined', () => {
+    rematchOfferSent.value = false
+    rematchDeclined.value = true
+  }))
+
+  cleanups.push(on('chat', (msg: any) => {
+    chatMessages.value.push({ from: msg.from, message: msg.message, mine: false })
+  }))
+
+  cleanups.push(on('clock_sync', (msg: any) => {
+    whiteTime.value = msg.whiteTime
+    blackTime.value = msg.blackTime
+  }))
 
   onUnmounted(() => {
     stopTimer()
     leaveGame(gameId)
-    offMessage()
+    for (const cleanup of cleanups) cleanup()
   })
 
   return {

@@ -51,7 +51,7 @@
 import type { FetchError } from '~/../shared/types'
 
 const { loggedIn } = useUserSession()
-const { friendRequests, pendingCount, acceptRequest, declineRequest, onNotification } = useNotifications()
+const { friendRequests, friendshipEvents, pendingCount, acceptRequest, declineRequest } = useNotifications()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 const { t } = useI18n()
 const toast = useToast()
@@ -60,10 +60,19 @@ watch(friendRequests, (reqs) => {
   if (reqs.length) fetchOnlineStatus(reqs.map(r => r.from.id))
 }, { immediate: true })
 
-const cleanup = onNotification((msg) => {
-  if (msg.type === 'game_invite') {
+watch(() => friendshipEvents.value.id, () => {
+  const ev = friendshipEvents.value
+  if (!ev.type) return
+
+  if (ev.type === 'friend_request' && ev.data) {
     toast.add({
-      title: t('invitesYouToPlay', { username: msg.from.username }),
+      title: t('sentYouFriendRequest', { username: ev.data.from.username }),
+      color: 'info',
+      duration: 8000,
+    })
+  } else if (ev.type === 'game_invite' && ev.data) {
+    toast.add({
+      title: t('invitesYouToPlay', { username: ev.data.from.username }),
       color: 'info',
       duration: 15000,
       actions: [
@@ -73,9 +82,9 @@ const cleanup = onNotification((msg) => {
             try {
               await $fetch('/api/games/join', {
                 method: 'POST',
-                body: { inviteCode: msg.inviteCode },
+                body: { inviteCode: ev.data.inviteCode },
               })
-              navigateTo(`/play/${msg.gameId}`)
+              navigateTo(`/play/${ev.data.gameId}`)
             } catch (e) {
               const err = e as FetchError
               toast.add({ title: err.data?.statusMessage || t('failedToJoinGame'), color: 'error' })
@@ -84,14 +93,6 @@ const cleanup = onNotification((msg) => {
         },
       ],
     })
-  } else if (msg.type === 'friend_request') {
-    toast.add({
-      title: t('sentYouFriendRequest', { username: msg.from.username }),
-      color: 'info',
-      duration: 8000,
-    })
   }
 })
-
-onUnmounted(cleanup)
 </script>

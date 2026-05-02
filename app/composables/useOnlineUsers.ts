@@ -1,22 +1,5 @@
-import { useSharedWebSocket } from './useSharedWebSocket'
-
 export function useOnlineUsers() {
   const onlineUsers = useState<Map<number, { online: boolean; lastSeenAt: string | null }>>('online-users', () => new Map())
-
-  const { onMessage } = useSharedWebSocket()
-
-  onMessage((msg) => {
-    if (msg.type === 'user_online') {
-      const next = new Map(onlineUsers.value)
-      next.set(msg.userId, { online: true, lastSeenAt: null })
-      onlineUsers.value = next
-    } else if (msg.type === 'user_offline') {
-      const next = new Map(onlineUsers.value)
-      const existing = next.get(msg.userId)
-      next.set(msg.userId, { online: false, lastSeenAt: existing?.lastSeenAt ?? new Date().toISOString() })
-      onlineUsers.value = next
-    }
-  })
 
   const fetchOnlineStatus = async (userIds: number[]) => {
     if (userIds.length === 0) return
