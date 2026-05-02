@@ -22,9 +22,9 @@
         </div>
       </div>
 
-      <div class="board-area w-full" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
+        <div class="board-area w-full" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
         <ClientOnly>
-          <TheChessboard :board-config="boardConfig" @board-created="onBoardCreated" />
+          <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
         </ClientOnly>
       </div>
 
@@ -59,9 +59,7 @@
 
 <script setup lang="ts">
 import { Chess } from 'chess.js'
-import { TheChessboard } from 'vue3-chessboard'
-import 'vue3-chessboard/style.css'
-import type { BoardApi } from 'vue3-chessboard'
+import type { Config } from 'chessground/config'
 
 const route = useRoute()
 const gameId = route.params.id as string
@@ -92,7 +90,7 @@ const game = ref<GameDetail | null>(null)
 const moves = ref<string[]>([])
 const positions = ref<string[]>([])
 const currentMoveIndex = ref(0)
-const boardApi = ref<InstanceType<typeof BoardApi> | null>(null)
+const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 
 const boardConfig = {
   viewOnly: true,
@@ -119,7 +117,7 @@ const showPosition = (index: number) => {
   boardApi.value.setPosition(positions.value[index])
 }
 
-const onBoardCreated = (api: InstanceType<typeof BoardApi>) => {
+const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
   boardApi.value = api
   if (game.value?.moves?.length) {
     loadGameIntoBoard()
@@ -182,20 +180,7 @@ onMounted(fetchGame)
 </script>
 
 <style scoped>
-.board-area :deep(.main-wrap) {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
-.board-area :deep(.main-board) {
-  position: relative;
-  height: 100%;
-  padding-bottom: 0;
-  width: auto;
-  aspect-ratio: 1;
-}
-.board-area :deep(.cg-wrap) {
-  position: relative;
+.board-area .chess-board-wrap {
   width: 100%;
   height: 100%;
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col gap-4">
+  <div class="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto">
     <div v-if="isWaiting" class="rounded-lg border border-dashed border-default p-6 text-center">
       <UIcon name="i-lucide-loader-2" class="mx-auto mb-3 size-8 animate-spin text-muted" />
       <p class="font-semibold">{{ $t('waitingForOpponentTitle') }}</p>

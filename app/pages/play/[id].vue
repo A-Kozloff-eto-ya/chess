@@ -1,6 +1,6 @@
 <template>
-  <div v-if="gameData && colorReady" ref="gameContainer" class="flex h-full flex-col lg:h-auto lg:flex-row lg:gap-4">
-    <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2 lg:px-0">
+  <div v-if="gameData && colorReady" ref="gameContainer" class="flex h-full flex-col lg:h-full lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
+    <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2">
       <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <div class="relative">
@@ -20,7 +20,7 @@
 
       <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
           <ClientOnly>
-            <TheChessboard
+            <ChessBoard
               :board-config="boardConfig"
               :player-color="playerColor"
               :reactive-config="true"
@@ -48,31 +48,30 @@
       </div>
     </div>
 
-    <div class="hidden lg:flex lg:w-80 lg:shrink-0 lg:flex-col lg:gap-4">
-      <DesktopSidebar
-        :is-waiting="isWaiting"
-        :game-over="gameOver"
-        :can-abort="canAbort"
-        :moves="moves"
-        :chat-messages="chatMessages"
-        :invite-code="inviteCode"
-        :is-my-turn="isMyTurn"
-        :game-over-text="gameOverText"
-        :rematch-offer-sent="rematchOfferSent"
-        :rematch-offer-received="rematchOfferReceived"
-        :rematch-declined="rematchDeclined"
-        :game-id="gameId"
-        @resign="doResign"
-        @abort="doAbort"
-        @offer-draw="doOfferDraw"
-        @send="sendChatMessage"
-        @offer-rematch="offerRematch"
-        @accept-rematch="acceptRematch"
-        @decline-rematch="declineRematch"
-        @show-invite="showInviteModal = true"
-        @copy-invite="copyInviteCode"
-      />
-    </div>
+    <GameDesktopSidebar
+      v-if="!isMobile"
+      :is-waiting="isWaiting"
+      :game-over="gameOver"
+      :can-abort="canAbort"
+      :moves="moves"
+      :chat-messages="chatMessages"
+      :invite-code="inviteCode"
+      :is-my-turn="isMyTurn"
+      :game-over-text="gameOverText"
+      :rematch-offer-sent="rematchOfferSent"
+      :rematch-offer-received="rematchOfferReceived"
+      :rematch-declined="rematchDeclined"
+      :game-id="gameId"
+      @resign="doResign"
+      @abort="doAbort"
+      @offer-draw="doOfferDraw"
+      @send="sendChatMessage"
+      @offer-rematch="offerRematch"
+      @accept-rematch="acceptRematch"
+      @decline-rematch="declineRematch"
+      @show-invite="showInviteModal = true"
+      @copy-invite="copyInviteCode"
+    />
 
     <div class="mt-2 lg:hidden">
       <div v-if="isWaiting" class="rounded-lg border border-dashed border-default p-4 text-center">
@@ -136,8 +135,6 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'game' })
-import { TheChessboard } from 'vue3-chessboard'
-import 'vue3-chessboard/style.css'
 
 const route = useRoute()
 const gameId = route.params.id as string
@@ -147,7 +144,7 @@ const showInviteModal = ref(false)
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 
 const gameContainer = ref<HTMLElement | null>(null)
-const { boardSize } = useBoardSize(gameContainer)
+const { boardSize, isMobile } = useBoardSize(gameContainer)
 
 const {
   gameData,
@@ -196,20 +193,7 @@ const copyInviteCode = () => {
 </script>
 
 <style scoped>
-.board-area :deep(.main-wrap) {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
-.board-area :deep(.main-board) {
-  position: relative;
-  height: 100%;
-  padding-bottom: 0;
-  width: auto;
-  aspect-ratio: 1;
-}
-.board-area :deep(.cg-wrap) {
-  position: relative;
+.board-area .chess-board-wrap {
   width: 100%;
   height: 100%;
 }

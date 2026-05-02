@@ -1,5 +1,4 @@
 import type { ServerMessage } from '~/types'
-import type { BoardApi } from 'vue3-chessboard'
 import { parseTimeControl } from '~/../shared/constants'
 
 export interface GameResponse {
@@ -30,7 +29,7 @@ export function useGameSession(gameId: string) {
   const isWaiting = ref(true)
   const inviteCode = ref('')
 
-  const boardApi = ref<InstanceType<typeof BoardApi> | null>(null)
+  const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
   const serverMoveCount = ref(0)
   let pendingLocalMove = false
   let applyingRemoteMove = false
@@ -142,7 +141,7 @@ export function useGameSession(gameId: string) {
     }
   }
 
-  const onBoardCreated = (api: InstanceType<typeof BoardApi>) => {
+  const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
     boardApi.value = api
   }
 
@@ -213,11 +212,11 @@ export function useGameSession(gameId: string) {
               sounds.move()
             }
             applyingRemoteMove = true
-            boardApi.value.move({
-              from: msg.lastMove.from,
-              to: msg.lastMove.to,
-              promotion: msg.lastMove.promotion,
-            })
+            boardApi.value.move(
+              msg.lastMove.from,
+              msg.lastMove.to,
+              msg.lastMove.promotion,
+            )
             nextTick(() => { applyingRemoteMove = false })
           }
         }

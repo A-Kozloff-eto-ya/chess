@@ -1,5 +1,5 @@
 <template>
-  <div ref="gameContainer" class="flex h-full flex-col lg:h-auto lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
+  <div ref="gameContainer" class="flex h-full flex-col lg:h-full lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
     <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2 lg:px-0">
       <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
@@ -12,9 +12,10 @@
 
       <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
           <ClientOnly>
-            <TheChessboard
+            <ChessBoard
               :key="boardKey"
               :board-config="boardConfig"
+              :player-color="playerColor"
               :reactive-config="true"
               @board-created="onBoardCreated"
               @move="onBoardMove"
@@ -35,7 +36,7 @@
       </div>
     </div>
 
-    <div class="mt-2 flex flex-col gap-2 p-2 lg:mt-0 lg:w-80 lg:shrink-0 lg:gap-4">
+    <div class="mt-2 flex flex-col gap-2 p-2 lg:mt-0 lg:w-80 lg:shrink-0 lg:gap-4 lg:overflow-y-auto lg:min-h-0">
       <div class="hidden lg:block">
         <GameMoveHistory :moves="moves" />
       </div>
@@ -64,12 +65,8 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'game' })
-import { TheChessboard } from 'vue3-chessboard'
-import type { BoardApi } from 'vue3-chessboard'
 import type { Key } from 'chessground/types'
-import 'vue3-chessboard/style.css'
-import type { Move } from 'chess.js'
-import type { EngineBestmoveResponse, EngineEvaluation } from '~/../shared/types'
+import type { EngineBestmoveResponse } from '~/../shared/types'
 import { parseTimeControl } from '~/../shared/constants'
 
 const DEFAULT_TC = parseTimeControl('10+0')
@@ -94,7 +91,7 @@ const gameOver = ref(false)
 const gameOverReason = ref('')
 const boardKey = ref(0)
 const isAiThinking = ref(false)
-const boardApi = ref<BoardApi | null>(null)
+const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 const evaluation = ref<{ type: 'cp' | 'mate'; value: number } | null>(null)
 
 const fetchEvaluation = async () => {
@@ -130,7 +127,7 @@ const gameOverText = computed(() => {
   return t('gameOver')
 })
 
-const onBoardCreated = (api: BoardApi) => {
+const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
   boardApi.value = api
   if (playerColor.value === 'black') {
     isAiThinking.value = true
@@ -138,7 +135,7 @@ const onBoardCreated = (api: BoardApi) => {
   }
 }
 
-const onBoardMove = (move: Move) => {
+const onBoardMove = (move: { from: string; to: string; promotion?: string; san: string; captured?: string }) => {
   if (gameOver.value) return
   moves.value.push(move.san)
 
@@ -150,12 +147,12 @@ const onBoardMove = (move: Move) => {
 
   startTimer(() => {
     const turn = boardApi.value?.getTurnColor()
-    return turn === 'white' ? 'white' : 'black'
+    return turn === 'w' ? 'white' : 'black'
   })
 
-  if (boardApi.value?.getIsGameOver()) return
+  if (boardApi.value?.isGameOver()) return
 
-  if (boardApi.value?.getTurnColor() !== aiColor.value) return
+  if (boardApi.value?.getTurnColor() !== (aiColor.value === 'white' ? 'w' : 'b')) return
 
   isAiThinking.value = true
   fetchEvaluation()
@@ -219,27 +216,32 @@ const getAiMove = async () => {
       const to = result.bestmove.substring(2, 4)
       const promotion = result.bestmove.length > 4 ? result.bestmove[4] : undefined
 
-      const success = boardApi.value.move({
-        from: from as Key,
-        to: to as Key,
-        promotion: promotion as 'q' | 'r' | 'b' | 'n' | undefined,
-      })
+      const success = boardApi.value.move(
+        from as Key,
+        to as Key,
+        promotion as 'q' | 'r' | 'b' | 'n' | undefined,
+      )
 
       if (success) {
         const lastMove = boardApi.value.getLastMove()
         if (lastMove) {
           moves.value.push(lastMove.san)
+          if (lastMove.captured) {
+            sounds.capture()
+          } else {
+            sounds.move()
+          }
         }
 
-        if (boardApi.value.getIsCheckmate()) {
+        if (boardApi.value.isCheckmate()) {
           gameOver.value = true
           gameOverReason.value = 'checkmate'
           stopTimer()
-        } else if (boardApi.value.getIsStalemate()) {
+        } else if (boardApi.value.isStalemate()) {
           gameOver.value = true
           gameOverReason.value = 'stalemate'
           stopTimer()
-        } else if (boardApi.value.getIsDraw()) {
+        } else if (boardApi.value.isDraw()) {
           gameOver.value = true
           gameOverReason.value = 'draw'
           stopTimer()
@@ -267,20 +269,7 @@ const resetGame = () => {
 </script>
 
 <style scoped>
-.board-area :deep(.main-wrap) {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
-.board-area :deep(.main-board) {
-  position: relative;
-  height: 100%;
-  padding-bottom: 0;
-  width: auto;
-  aspect-ratio: 1;
-}
-.board-area :deep(.cg-wrap) {
-  position: relative;
+.board-area .chess-board-wrap {
   width: 100%;
   height: 100%;
 }

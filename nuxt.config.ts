@@ -5,6 +5,10 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', 'nuxt-auth-utils'],
 
+  ui: {
+    fonts: false,
+  },
+
   imports: {
     presets: [{ from: 'vue-i18n', imports: ['useI18n'] }],
   },

@@ -93,7 +93,7 @@
           />
           <div class="flex-1 min-w-0 min-h-0">
             <ClientOnly>
-              <TheChessboard :board-config="boardConfig" @board-created="onBoardCreated" />
+              <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
             </ClientOnly>
           </div>
         </div>
@@ -172,9 +172,6 @@
 
 <script setup lang="ts">
 import { Chess } from 'chess.js'
-import { TheChessboard } from 'vue3-chessboard'
-import 'vue3-chessboard/style.css'
-import type { BoardApi } from 'vue3-chessboard'
 import type { AnalyzedMove } from '~/types'
 
 const { parsePgn } = usePgn()
@@ -189,7 +186,7 @@ const tabItems = [
   { label: 'FEN', slot: 'fen' },
 ]
 const loadedGame = ref<{ moves: { from: string; to: string; promotion?: string; san: string }[]; headers: Record<string, string>; result: string | null } | null>(null)
-const boardApi = ref<InstanceType<typeof BoardApi> | null>(null)
+const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 const boardConfig = { viewOnly: true, coordinates: true }
 
 const positions = ref<string[]>([])
@@ -265,7 +262,7 @@ const showPosition = (index: number) => {
   boardApi.value.setPosition(positions.value[index])
 }
 
-const onBoardCreated = (api: InstanceType<typeof BoardApi>) => {
+const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
   boardApi.value = api
   if (loadedGame.value) {
     showPosition(currentMoveIndex.value)
@@ -476,20 +473,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.board-area :deep(.main-wrap) {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
-.board-area :deep(.main-board) {
-  position: relative;
-  height: 100%;
-  padding-bottom: 0;
-  width: auto;
-  aspect-ratio: 1;
-}
-.board-area :deep(.cg-wrap) {
-  position: relative;
+.board-area .chess-board-wrap {
   width: 100%;
   height: 100%;
 }

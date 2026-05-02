@@ -128,7 +128,7 @@ export type ClientMessage =
 export type ServerMessage =
   | { type: 'joined'; gameId: string; color: 'white' | 'black'; opponent: UserInfo | null; whiteTime?: number; blackTime?: number; lastMoveAt?: number; fen?: string; moveCount?: number; turn?: 'white' | 'black'; chatHistory?: { from: string; message: string; userId: number }[] }
   | { type: 'opponent_joined'; gameId: string; opponent: UserInfo }
-  | { type: 'state_update'; gameId: string; fen: string; moveCount: number; lastMove: { from: string; to: string; san: string } | null; turn: 'white' | 'black'; whiteTime: number; blackTime: number; isCheck: boolean }
+  | { type: 'state_update'; gameId: string; fen: string; moveCount: number; lastMove: { from: string; to: string; san: string; captured?: string; promotion?: string } | null; turn: 'white' | 'black'; whiteTime: number; blackTime: number; isCheck: boolean }
   | { type: 'move_rejected'; reason: string; fen: string }
   | { type: 'game_over'; gameId: string; result: string; reason: string }
   | { type: 'draw_offered'; by: string }
