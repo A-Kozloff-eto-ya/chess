@@ -18,12 +18,20 @@ const DEFAULTS: AppSettings = {
   colorMode: 'system',
 }
 
-const STORAGE_KEY = 'chess-settings'
 let initialized = false
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
 
 export function useSettings() {
-  const state = useState<AppSettings>('app-settings', () => ({ ...DEFAULTS }))
+  const cookie = useCookie<Partial<AppSettings>>('chess-settings', {
+    maxAge: 60 * 60 * 24 * 365,
+    path: '/',
+  })
+
+  const state = useState<AppSettings>('app-settings', () => ({
+    ...DEFAULTS,
+    ...(cookie.value || {}),
+  }))
+
   const { loggedIn } = useUserSession()
   const { locale } = useI18n()
   const {
@@ -53,32 +61,13 @@ export function useSettings() {
     }
   }
 
-  const loadFromStorage = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        delete parsed.theme
-        delete parsed.boardTheme
-        state.value = { ...DEFAULTS, ...parsed }
-      }
-    } catch {}
-  }
-
   const loadFromServer = async () => {
     try {
       const serverSettings = await $fetch<Record<string, any>>('/api/users/settings')
       if (serverSettings && Object.keys(serverSettings).length > 0) {
         state.value = { ...DEFAULTS, ...serverSettings as Partial<AppSettings> }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.value))
+        cookie.value = state.value
       }
-    } catch {}
-  }
-
-  const saveToStorage = () => {
-    if (import.meta.server) return
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.value))
     } catch {}
   }
 
@@ -98,7 +87,6 @@ export function useSettings() {
   if (import.meta.client && !initialized) {
     initialized = true
 
-    loadFromStorage()
     applyThemeSettings()
 
     if (loggedIn.value) {
@@ -106,7 +94,7 @@ export function useSettings() {
     }
 
     watch(state, () => {
-      saveToStorage()
+      cookie.value = state.value
       if (loggedIn.value) {
         saveToServer()
       }

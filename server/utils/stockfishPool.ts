@@ -57,14 +57,14 @@ function createWorker(stockfishPath: string): PoolWorker {
 
       if (!worker.currentTask) continue
 
-      if ((worker.currentTask.type === 'eval' || worker.currentTask.type === 'analysis') && trimmed.startsWith('info')) {
+      if (trimmed.startsWith('info')) {
         const score = parseEvalFromInfo(trimmed)
         if (score) {
           worker.currentTask.evalScore = score
         }
+        const depthMatch = trimmed.match(/\bdepth (\d+)\b/)
+        if (depthMatch) worker.currentTask.depth = parseInt(depthMatch[1])
         if (worker.currentTask.type === 'analysis') {
-          const depthMatch = trimmed.match(/\bdepth (\d+)\b/)
-          if (depthMatch) worker.currentTask.depth = parseInt(depthMatch[1])
           const pvMatch = trimmed.match(/ pv (.+)$/)
           if (pvMatch) worker.currentTask.pv = pvMatch[1].trim().split(/\s+/)
         }
@@ -83,7 +83,7 @@ function createWorker(stockfishPath: string): PoolWorker {
           task.resolve({ eval: task.evalScore, bestmove: parts[1] ?? '', depth: task.depth, pv: task.pv })
         } else {
           const parts = trimmed.split(/\s+/)
-          task.resolve({ bestmove: parts[1] ?? '', ponder: parts[3] ?? null })
+          task.resolve({ bestmove: parts[1] ?? '', ponder: parts[3] ?? null, depth: task.depth, eval: task.evalScore })
         }
         processQueue()
       }
@@ -146,9 +146,11 @@ function processQueue() {
 
     worker.proc.stdin!.write('ucinewgame\n')
     if (task.elo) {
+      console.log(`[Stockfish] [${task.type}] Setting ELO=${task.elo}`)
       worker.proc.stdin!.write('setoption name UCI_LimitStrength value true\n')
       worker.proc.stdin!.write(`setoption name UCI_Elo value ${task.elo}\n`)
     } else {
+      console.log(`[Stockfish] [${task.type}] No ELO limit (full strength)`)
       worker.proc.stdin!.write('setoption name UCI_LimitStrength value false\n')
     }
     worker.proc.stdin!.write('isready\n')
@@ -162,7 +164,7 @@ export function submitToPool(
   positionCmd: string,
   movetime: number,
   elo?: number
-): Promise<{ bestmove: string; ponder: string | null }> {
+): Promise<{ bestmove: string; ponder: string | null; depth: number; eval: { type: 'cp' | 'mate'; value: number } | null }> {
   return new Promise((resolve, reject) => {
     if (queue.length >= QUEUE_MAX) {
       reject(new Error('Engine queue is full'))

@@ -98,6 +98,8 @@ export interface GameAnalysis {
 export interface EngineBestmoveResponse {
   bestmove: string
   ponder: string | null
+  depth: number
+  eval: { type: 'cp' | 'mate'; value: number } | null
 }
 
 export interface UserInfo {

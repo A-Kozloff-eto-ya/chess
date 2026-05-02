@@ -43,9 +43,18 @@ export function useTheme() {
   const _radius = useLocalStorage('nuxt-ui-radius', DEFAULT_RADIUS)
   const _blackAsPrimary = useLocalStorage('nuxt-ui-black-as-primary', false)
 
+  const settingsCookie = useCookie<Record<string, any>>('chess-settings')
+
+  if (import.meta.server) {
+    const s = settingsCookie.value
+    if (s?.primary) appConfig.ui.colors.primary = s.primary
+    if (s?.neutral) appConfig.ui.colors.neutral = s.neutral
+  }
+
   if (import.meta.client) {
-    const savedPrimary = localStorage.getItem('nuxt-ui-primary')
-    const savedNeutral = localStorage.getItem('nuxt-ui-neutral')
+    const s = settingsCookie.value
+    const savedPrimary = s?.primary
+    const savedNeutral = s?.neutral
     if (savedPrimary) appConfig.ui.colors.primary = savedPrimary
     if (savedNeutral) appConfig.ui.colors.neutral = savedNeutral
 
@@ -67,7 +76,6 @@ export function useTheme() {
     set(option: string) {
       appConfig.ui.colors.neutral = option
       if (import.meta.client) {
-        localStorage.setItem('nuxt-ui-neutral', option)
         swapColorsInDOM(null, option !== DEFAULT_NEUTRAL ? option : null)
       }
     }
@@ -80,7 +88,6 @@ export function useTheme() {
     set(option: string) {
       appConfig.ui.colors.primary = option
       if (import.meta.client) {
-        localStorage.setItem('nuxt-ui-primary', option)
         swapColorsInDOM(option !== DEFAULT_PRIMARY ? option : null, null)
         setBlackAsPrimary(false)
       }
@@ -173,13 +180,10 @@ export function useTheme() {
 
   function resetTheme() {
     appConfig.ui.colors.primary = DEFAULT_PRIMARY
+    appConfig.ui.colors.neutral = DEFAULT_NEUTRAL
     if (import.meta.client) {
-      localStorage.removeItem('nuxt-ui-primary')
-      localStorage.removeItem('nuxt-ui-neutral')
       swapColorsInDOM(DEFAULT_PRIMARY, DEFAULT_NEUTRAL)
     }
-
-    appConfig.ui.colors.neutral = DEFAULT_NEUTRAL
     _radius.value = DEFAULT_RADIUS
     _blackAsPrimary.value = false
   }

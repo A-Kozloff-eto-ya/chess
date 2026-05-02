@@ -81,6 +81,7 @@ const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer)
 
 const engineElo = ref(Number(route.query.elo) || 1500)
+const engineMovetime = ref(Number(route.query.movetime) || 1000)
 const playerColor = ref<'white' | 'black'>(((route.query.color as string) || 'white') as 'white' | 'black')
 const aiColor = computed(() => playerColor.value === 'white' ? 'black' : 'white')
 
@@ -202,7 +203,7 @@ const getAiMove = async () => {
     const history = boardApi.value.getHistory()
     const body: Record<string, unknown> = {
       elo: engineElo.value,
-      movetime: 1000,
+      movetime: engineMovetime.value,
     }
     if (history.length > 0) {
       body.sanMoves = history.join(' ')
