@@ -8,8 +8,15 @@ export function useNotifications() {
   const { loggedIn } = useUserSession()
   const toast = useToast()
 
-  const notificationsState = useState<NotificationsState>('notif-state')
-  const friendshipEvents = useState<FriendshipEvent>('notif-events')
+  const notificationsState = useState<NotificationsState>('notif-state', () => ({
+    friendRequests: [],
+    loaded: false,
+  }))
+  const friendshipEvents = useState<FriendshipEvent>('notif-events', () => ({
+    id: 0,
+    type: null,
+    userId: null,
+  }))
 
   const state = notificationsState.value
   const pendingCount = computed(() => state.friendRequests.length)
