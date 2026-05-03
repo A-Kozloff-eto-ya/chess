@@ -93,6 +93,12 @@ export function useSettings() {
       loadFromServer().then(() => applyThemeSettings())
     }
 
+    watch(loggedIn, (nowLoggedIn) => {
+      if (nowLoggedIn) {
+        loadFromServer().then(() => applyThemeSettings())
+      }
+    })
+
     watch(state, () => {
       cookie.value = state.value
       if (loggedIn.value) {
@@ -105,5 +111,10 @@ export function useSettings() {
     state.value = { ...state.value, [key]: value }
   }
 
-  return { settings: state, update }
+  const refresh = async () => {
+    await loadFromServer()
+    applyThemeSettings()
+  }
+
+  return { settings: state, update, refresh }
 }

@@ -6,6 +6,7 @@
           <UIcon name="i-lucide-bot" class="size-5 text-info" />
           <span class="text-sm font-semibold lg:text-base">{{ $t('stockfishAI') }}</span>
           <span class="text-xs text-muted lg:text-sm">{{ $t('elo', { elo: engineElo }) }}</span>
+          <GameCapturedPieces :captured="opponentCaptured" :color="aiColor" :material-diff="captured.materialDiff" />
         </div>
         <div class="font-mono text-xl lg:text-lg" role="timer" :aria-label="`AI time: ${formatTime(opponentTime)}`">{{ formatTime(opponentTime) }}</div>
       </div>
@@ -31,6 +32,7 @@
         <div class="flex items-center gap-2">
           <UAvatar :src="resolveAvatar(user?.avatar)" size="sm" />
           <span class="text-sm font-semibold lg:text-base">{{ user?.username || $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
+          <GameCapturedPieces :captured="playerCaptured" :color="playerColor" :material-diff="captured.materialDiff" />
         </div>
         <div class="font-mono text-xl lg:text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
       </div>
@@ -95,6 +97,15 @@ const boardKey = ref(0)
 const isAiThinking = ref(false)
 const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 
+const currentFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+const captured = useCapturedPieces(currentFen)
+const playerCaptured = computed(() => playerColor.value === 'white' ? captured.value.white : captured.value.black)
+const opponentCaptured = computed(() => playerColor.value === 'white' ? captured.value.black : captured.value.white)
+
+const updateFen = () => {
+  if (boardApi.value) currentFen.value = boardApi.value.getFen()
+}
+
 const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
 resetClock(DEFAULT_TC.base)
 
@@ -126,6 +137,8 @@ const onBoardMove = (move: { from: string; to: string; promotion?: string; san: 
   } else {
     sounds.move()
   }
+
+  nextTick(updateFen)
 
   startTimer(() => {
     const turn = boardApi.value?.getTurnColor()
@@ -214,6 +227,8 @@ const getAiMove = async () => {
           }
         }
 
+        nextTick(updateFen)
+
         if (boardApi.value.isCheckmate()) {
           gameOver.value = true
           gameOverReason.value = 'checkmate'
@@ -270,6 +285,7 @@ const resetGame = () => {
   resetClock(DEFAULT_TC.base)
   isAiThinking.value = false
   boardApi.value = null
+  currentFen.value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 }
 </script>
 

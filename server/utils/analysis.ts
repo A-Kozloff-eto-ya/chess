@@ -16,8 +16,15 @@ function mateToCp(type: 'cp' | 'mate', value: number): number {
   return value
 }
 
-function classifyMove(cpLoss: number): AnalyzedMove['quality'] {
-  if (cpLoss <= 5) return 'best'
+function classifyMove(cpLoss: number, evalBefore?: number, evalAfter?: number, isWhite?: boolean): AnalyzedMove['quality'] {
+  if (cpLoss <= 5) {
+    if (evalBefore != null && evalAfter != null && isWhite != null) {
+      const before = isWhite ? evalBefore : -evalBefore
+      const after = isWhite ? evalAfter : -evalAfter
+      if (before <= -150 && after >= 0) return 'brilliant'
+    }
+    return 'best'
+  }
   if (cpLoss <= 25) return 'good'
   if (cpLoss <= 75) return 'inaccuracy'
   if (cpLoss <= 150) return 'mistake'
@@ -156,7 +163,7 @@ export async function runAnalysis(gameId: number) {
         fen: fens[i + 1],
         evalBefore,
         evalAfter,
-        quality: classifyMove(cpLoss),
+        quality: classifyMove(cpLoss, evalBefore, evalAfter, isWhite),
         bestMove: bestSan,
         bestPv: [],
       })

@@ -4,7 +4,7 @@ const SIDEBAR_WIDTH = 320
 const INFO_BARS_HEIGHT = 72
 const GAP = 16
 
-export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight: number = 0) {
+export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight: number = 0, extraWidth: number = 0) {
   const boardSize = ref(400)
   const isMobile = ref(false)
   const isLandscape = ref(false)
@@ -24,16 +24,16 @@ export function useBoardSize(containerRef: Ref<HTMLElement | null>, extraHeight:
     let maxSize: number
 
     if (desktop) {
-      const availW = el.clientWidth - SIDEBAR_WIDTH - GAP
+      const availW = el.clientWidth - SIDEBAR_WIDTH - GAP - extraWidth
       const availH = el.clientHeight - INFO_BARS_HEIGHT - GAP - extraHeight
       maxSize = Math.min(availW, availH)
     } else {
-      const availW = el.clientWidth
+      const availW = el.clientWidth - extraWidth
       const availH = el.clientHeight - INFO_BARS_HEIGHT - GAP - extraHeight
       maxSize = Math.min(availW, availH)
     }
 
-    const rounded = Math.floor(Math.max(maxSize, 200))
+    const rounded = Math.round(Math.max(maxSize, 200))
     if (boardSize.value !== rounded) {
       boardSize.value = rounded
     }

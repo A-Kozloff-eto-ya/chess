@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col items-center gap-8">
     <div class="text-center">
-      <h1 class="text-4xl font-bold flex items-center justify-center">
-        <UIcon name="i-lucide-crown" class="mr-2 text-primary" />
+      <img src="/logo.svg" alt="" class="mx-auto mb-4 size-24" />
+      <h1 class="text-4xl font-bold">
         {{ $t('chess') }}
       </h1>
       <p class="mt-2 text-muted">{{ $t('playChessDesc') }}</p>

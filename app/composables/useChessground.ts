@@ -3,6 +3,7 @@ import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Config } from 'chessground/config'
 import type { Key, Color, Role } from 'chessground/types'
+import type { DrawShape } from 'chessground/draw'
 import { Chess } from 'chess.js'
 
 export interface ChessgroundCallbacks {
@@ -307,7 +308,7 @@ export function useChessground(options: UseChessgroundOptions = {}) {
     cg.value.set(buildConfig(config))
   }
 
-  const setPosition = (fen: string) => {
+  const setPosition = (fen: string, lastMove?: { from: string; to: string }, autoShapes?: DrawShape[]) => {
     try {
       chess.value.load(fen)
     } catch {
@@ -315,7 +316,7 @@ export function useChessground(options: UseChessgroundOptions = {}) {
     }
     if (!cg.value) return
     const turnColor = toColor(chess.value.turn())
-    cg.value.set({
+    const cfg: Partial<Config> = {
       fen: chess.value.fen(),
       turnColor,
       check: chess.value.inCheck() ? turnColor : undefined,
@@ -323,7 +324,14 @@ export function useChessground(options: UseChessgroundOptions = {}) {
         color: movableColor && movableColor !== 'both' ? movableColor : turnColor,
         dests: options.autoValidateMoves !== false ? computeDests() : undefined,
       },
-    })
+    }
+    if (lastMove) {
+      cfg.lastMove = [lastMove.from as Key, lastMove.to as Key]
+    }
+    if (autoShapes) {
+      cfg.drawable = { autoShapes }
+    }
+    cg.value.set(cfg)
   }
 
   const move = (from: string, to: string, promotion?: string): boolean => {
@@ -464,6 +472,10 @@ export function useChessground(options: UseChessgroundOptions = {}) {
     getLastMove: () => {
       const hist = chess.value.history({ verbose: true })
       return hist.length > 0 ? hist[hist.length - 1] : undefined
+    },
+    setAutoShapes: (shapes: DrawShape[]) => {
+      if (!cg.value) return
+      cg.value.set({ drawable: { autoShapes: shapes } })
     },
   }
 }

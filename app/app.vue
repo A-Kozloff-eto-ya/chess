@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { style } = useTheme()
 
+useSettings()
+
 useHead({
   style,
   script: [

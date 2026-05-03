@@ -2,10 +2,14 @@
   <div v-if="profile" class="flex flex-col gap-6">
     <UCard>
       <div class="flex gap-4">
-        <div class="relative flex-shrink-0">
-          <UAvatar :src="resolveAvatar(profile.avatar)" size="3xl" class="size-20 sm:size-32 md:size-40" />
-          <span v-if="isProfileOnline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-success" />
-          <span v-else-if="isProfileOffline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-error" />
+        <div>
+          <div class="relative shrink-0">
+            <UAvatar :src="resolveAvatar(profile.avatar)" size="3xl" class="size-20 sm:size-32 md:size-40" />
+            <span v-if="isProfileOnline"
+              class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-success" />
+            <span v-else-if="isProfileOffline"
+              class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-error" />
+          </div>
         </div>
         <div class="flex flex-col justify-center min-w-0">
           <div class="flex items-center gap-2">
@@ -18,44 +22,26 @@
           </p>
           <p v-if="profile.bio" class="mt-1 text-sm text-default">{{ profile.bio }}</p>
           <p class="text-sm text-muted">{{ $t('joined', { date: formatDate(profile.createdAt) }) }}</p>
-          <UButton v-if="isOwnProfile && !editing" :label="$t('editProfile')" icon="i-lucide-pencil" size="sm" variant="outline" class="mt-2" @click="startEditing" />
+          <UButton v-if="isOwnProfile && !editing" :label="$t('editProfile')" icon="i-lucide-pencil" size="sm"
+            variant="outline" class="mt-2" @click="startEditing" />
           <div v-if="isFriend" class="mt-2">
-            <UButton
-              :label="$t('removeFriend')"
-              icon="i-lucide-user-minus"
-              size="sm"
-              color="error"
-              variant="ghost"
-              :loading="removingFriend"
-              @click="removeFriend"
-            />
+            <UButton :label="$t('removeFriend')" icon="i-lucide-user-minus" size="sm" color="error" variant="ghost"
+              :loading="removingFriend" @click="removeFriend" />
           </div>
           <div v-else-if="friendRequestSent" class="mt-2">
-            <UButton
-              :label="$t('cancelRequest')"
-              icon="i-lucide-x"
-              size="sm"
-              variant="ghost"
-              :loading="cancellingRequest"
-              @click="cancelRequest"
-            />
+            <UButton :label="$t('cancelRequest')" icon="i-lucide-x" size="sm" variant="ghost"
+              :loading="cancellingRequest" @click="cancelRequest" />
           </div>
           <div v-else-if="canAddFriend" class="mt-2">
-            <UButton
-              :label="friendButtonText"
-              :icon="friendButtonIcon"
-              size="sm"
-              :variant="isFriend ? 'outline' : 'solid'"
-              :loading="addingFriend"
-              :disabled="isFriend || friendRequestSent"
-              @click="sendFriendRequest"
-            />
+            <UButton :label="friendButtonText" :icon="friendButtonIcon" size="sm"
+              :variant="isFriend ? 'outline' : 'solid'" :loading="addingFriend"
+              :disabled="isFriend || friendRequestSent" @click="sendFriendRequest" />
           </div>
         </div>
       </div>
     </UCard>
 
-    <UCard v-if="stats">
+    <UCard v-if="!editing && stats">
       <template #header>
         <span class="font-semibold">{{ isOwnProfile ? $t('yourStats') : $t('stats') }}</span>
       </template>
@@ -94,8 +80,10 @@
         <UFormField :label="$t('avatar')">
           <div class="flex items-center gap-4">
             <UAvatar :src="resolveAvatar(editForm.avatar)" size="xl" />
-            <UButton :label="$t('uploadPhoto')" icon="i-lucide-upload" variant="outline" size="sm" :loading="uploading" @click="avatarInput?.click()" />
-            <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" @change="onAvatarUpload" />
+            <UButton :label="$t('uploadPhoto')" icon="i-lucide-upload" variant="outline" size="sm" :loading="uploading"
+              @click="avatarInput?.click()" />
+            <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden"
+              @change="onAvatarUpload" />
           </div>
         </UFormField>
         <div class="flex gap-2">
@@ -105,25 +93,16 @@
       </div>
     </UCard>
 
-    <UCard>
-      <template #header>
-        <span class="font-semibold">{{ $t('gameHistory') }}</span>
-      </template>
+    <UCard v-if="!editing">
       <div v-if="games.length === 0" class="py-4 text-center text-muted">
         {{ $t('noGamesPlayed') }}
       </div>
       <div v-else class="flex flex-col gap-2">
-        <div
-          v-for="game in games"
-          :key="game.id"
+        <div v-for="game in games" :key="game.id"
           class="flex items-center justify-between rounded-lg bg-elevated p-3 cursor-pointer hover:bg-accented transition-colors"
-          @click="navigateTo(`/game/${game.id}`)"
-        >
+          @click="navigateTo(`/game/${game.id}`)">
           <div class="flex items-center gap-3">
-            <span
-              class="rounded px-2 py-0.5 text-sm font-medium"
-              :class="getResultClass(game)"
-            >
+            <span class="rounded px-2 py-0.5 text-sm font-medium" :class="getResultClass(game)">
               {{ getResultLabel(game) }}
             </span>
             <span class="text-sm text-default">{{ game.timeControl }}</span>

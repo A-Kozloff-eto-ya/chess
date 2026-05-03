@@ -1,34 +1,49 @@
 <template>
-  <div v-if="game" ref="gameContainer" class="flex flex-col gap-3 lg:flex-row lg:gap-4">
-    <div class="flex flex-1 flex-col items-center gap-2">
-      <div class="flex w-full items-center justify-between" :style="{ maxWidth: (boardSize + 36) + 'px' }">
+  <div v-if="game" ref="gameContainer" class="flex h-full flex-col lg:h-full lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
+    <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2 lg:px-0">
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="relative">
+            <UAvatar :src="resolveAvatar(game.blackPlayer?.avatar)" size="xs" />
+            <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
+              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
+          </div>
+          <span class="truncate text-sm font-semibold lg:text-base">{{ game.blackPlayer?.username }}</span>
+          <span class="hidden text-xs text-muted lg:inline">({{ game.blackPlayer?.rating }})</span>
+          <GameCapturedPieces :captured="captured.black" color="black" :material-diff="captured.materialDiff" />
+        </div>
+        <span class="shrink-0 font-mono text-sm text-primary px-2">{{ game.result || '*' }}</span>
+      </div>
+
+      <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
+        <ClientOnly>
+          <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
+        </ClientOnly>
+      </div>
+
+      <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2 min-w-0">
           <div class="relative">
             <UAvatar :src="resolveAvatar(game.whitePlayer?.avatar)" size="xs" />
             <span v-if="game.whitePlayer && isOnline(game.whitePlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
           </div>
-          <span class="truncate text-sm">{{ game.whitePlayer?.username }}</span>
-          <span class="hidden text-xs text-muted sm:inline">({{ game.whitePlayer?.rating }})</span>
-        </div>
-        <span class="shrink-0 font-mono text-sm text-primary px-2">{{ game.result || '*' }}</span>
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="truncate text-sm text-right">{{ game.blackPlayer?.username }}</span>
-          <div class="relative shrink-0">
-            <UAvatar :src="resolveAvatar(game.blackPlayer?.avatar)" size="xs" />
-            <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
-              class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
-          </div>
+          <span class="truncate text-sm font-semibold lg:text-base">{{ game.whitePlayer?.username }}</span>
+          <span class="hidden text-xs text-muted lg:inline">({{ game.whitePlayer?.rating }})</span>
+          <GameCapturedPieces :captured="captured.white" color="white" :material-diff="captured.materialDiff" />
         </div>
       </div>
 
-        <div class="board-area w-full" :style="{ maxWidth: (boardSize + 36) + 'px', height: boardSize + 'px' }">
-        <ClientOnly>
-          <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
-        </ClientOnly>
+      <div class="flex gap-1.5" :style="{ maxWidth: boardSize + 'px' }">
+        <UButton icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move" class="flex-1" @click="goToMove(0)" />
+        <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" class="flex-1" @click="goToMove(currentMoveIndex - 1)" />
+        <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" class="flex-1" @click="goToMove(currentMoveIndex + 1)" />
+        <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" class="flex-1" @click="goToMove(moves.length)" />
       </div>
+    </div>
 
-      <div class="flex flex-wrap gap-1.5" :style="{ maxWidth: (boardSize + 36) + 'px' }">
+    <div class="mt-2 flex flex-col gap-2 p-2 lg:mt-0 lg:w-80 lg:shrink-0 lg:gap-4 lg:overflow-y-auto lg:min-h-0 lg:p-0">
+      <div class="hidden lg:flex flex-wrap gap-1.5">
         <UButton icon="i-lucide-microscope" variant="outline" size="sm" class="flex-1 min-w-0" @click="navigateTo(`/analyze/${gameId}`)">
           <span class="truncate">{{ $t('analyzeGame') }}</span>
         </UButton>
@@ -43,16 +58,22 @@
         </UButton>
       </div>
 
-      <div class="flex gap-1.5" :style="{ maxWidth: (boardSize + 36) + 'px' }">
-        <UButton icon="i-lucide-skip-back" variant="ghost" size="sm" aria-label="First move" class="flex-1" @click="goToMove(0)" />
-        <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" class="flex-1" @click="goToMove(currentMoveIndex - 1)" />
-        <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" class="flex-1" @click="goToMove(currentMoveIndex + 1)" />
-        <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" class="flex-1" @click="goToMove(moves.length)" />
-      </div>
-    </div>
-
-    <div class="flex w-full flex-col gap-4 lg:w-80">
       <GameMoveHistory :moves="moves" />
+
+      <div class="lg:hidden flex flex-wrap gap-1.5">
+        <UButton icon="i-lucide-microscope" variant="outline" size="sm" class="flex-1 min-w-0" @click="navigateTo(`/analyze/${gameId}`)">
+          <span class="truncate">{{ $t('analyzeGame') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-copy" variant="outline" size="sm" class="flex-1 min-w-0" @click="copyPGN">
+          <span class="truncate">{{ $t('copyPGN') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-download" variant="outline" size="sm" class="flex-1 min-w-0" @click="downloadPGN">
+          <span class="truncate">{{ $t('downloadPGN') }}</span>
+        </UButton>
+        <UButton icon="i-lucide-square-code" variant="outline" size="sm" class="flex-1 min-w-0" @click="copyFEN">
+          <span class="truncate">{{ $t('copyFEN') }}</span>
+        </UButton>
+      </div>
     </div>
   </div>
 </template>
@@ -60,6 +81,8 @@
 <script setup lang="ts">
 import { Chess } from 'chess.js'
 import type { Config } from 'chessground/config'
+
+definePageMeta({ layout: 'game' })
 
 const route = useRoute()
 const gameId = route.params.id as string
@@ -90,6 +113,7 @@ interface GameDetail {
 const game = ref<GameDetail | null>(null)
 const moves = ref<string[]>([])
 const positions = ref<string[]>([])
+const movesList = ref<GameMove[]>([])
 const currentMoveIndex = ref(0)
 const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 
@@ -97,9 +121,13 @@ const boardConfig = {
   viewOnly: true,
 }
 
+const currentFen = computed(() => positions.value[currentMoveIndex.value] ?? '')
+const captured = useCapturedPieces(currentFen)
+
 const buildPositions = (gameMoves: GameMove[]) => {
   const chess = new Chess()
   positions.value = [chess.fen()]
+  movesList.value = [...gameMoves]
   for (const m of gameMoves) {
     try {
       chess.move({ from: m.from, to: m.to, promotion: m.promotion })
@@ -115,7 +143,13 @@ const buildPositions = (gameMoves: GameMove[]) => {
 
 const showPosition = (index: number) => {
   if (!boardApi.value || !positions.value[index]) return
-  boardApi.value.setPosition(positions.value[index])
+  const lastMove = index > 0 && index - 1 < movesList.value.length
+    ? movesList.value[index - 1]!
+    : undefined
+  boardApi.value.setPosition(
+    positions.value[index]!,
+    lastMove ? { from: lastMove.from, to: lastMove.to } : undefined,
+  )
 }
 
 const onBoardCreated = (api: ReturnType<typeof useChessground>) => {

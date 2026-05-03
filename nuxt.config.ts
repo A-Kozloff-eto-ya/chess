@@ -67,6 +67,10 @@ export default defineNuxtConfig({
         clientId: process.env.NUXT_OAUTH_YANDEX_CLIENT_ID || '',
         clientSecret: process.env.NUXT_OAUTH_YANDEX_CLIENT_SECRET || '',
       },
+      discord: {
+        clientId: process.env.NUXT_OAUTH_DISCORD_CLIENT_ID || '',
+        clientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET || '',
+      },
     },
     stockfishPath: process.env.STOCKFISH_PATH || './stockfish',
     shm: {

@@ -2,7 +2,7 @@
   <header class="border-b border-default bg-default">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 lg:px-4 lg:py-3">
       <NuxtLink to="/" class="flex items-center gap-2 text-xl font-bold" :aria-label="`${$t('chess')} — ${$t('home')}`">
-        <UIcon name="i-lucide-crown" class="size-6 text-amber-500" aria-hidden="true" />
+        <img src="/logo.svg" alt="" class="size-8" aria-hidden="true" />
         <span class="hidden sm:inline">{{ $t('chess') }}</span>
       </NuxtLink>
 

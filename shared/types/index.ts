@@ -47,7 +47,7 @@ export interface AnalyzedMove {
   fen: string
   evalBefore: number
   evalAfter: number
-  quality: 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
+  quality: 'brilliant' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
   bestMove: string
   bestPv: string[]
 }

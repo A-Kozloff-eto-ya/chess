@@ -212,7 +212,12 @@ defineExpose({
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: var(--ui-radius, 0.5rem);
+}
+
+@media (min-width: 1024px) {
+  .chess-board-wrap {
+    border-radius: var(--ui-radius, 0.5rem);
+  }
 }
 
 .chess-board-wrap .cg-wrap {

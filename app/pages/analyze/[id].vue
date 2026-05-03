@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col lg:h-auto">
+  <div class="flex h-full flex-col lg:h-full">
     <div v-if="status === 'loading' || status === 'analyzing'" class="flex flex-1 items-center justify-center">
       <div class="text-center p-4">
         <UIcon name="i-lucide-brain" class="mx-auto mb-3 size-10 animate-pulse text-primary" />
@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <div v-else-if="analysis" ref="gameContainer" class="flex flex-1 flex-col gap-2 lg:flex-row lg:gap-4">
+    <div v-else-if="analysis" ref="gameContainer" class="flex h-full flex-col gap-2 lg:flex-row lg:gap-4 lg:max-w-7xl lg:mx-auto">
       <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2">
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
           <div class="flex items-center gap-2 min-w-0">
@@ -31,6 +31,7 @@
                 {{ $t('accuracy') }}: <span :class="blackAccuracy >= 80 ? 'text-success' : blackAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ blackAccuracy }}%</span>
               </p>
             </div>
+            <GameCapturedPieces :captured="captured.black" color="black" :material-diff="captured.materialDiff" />
           </div>
           <div v-if="currentMoveIndex > 0" class="shrink-0 font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
             {{ formatEval(currentEval) }}
@@ -55,6 +56,7 @@
                 {{ $t('accuracy') }}: <span :class="whiteAccuracy >= 80 ? 'text-success' : whiteAccuracy >= 50 ? 'text-warning' : 'text-error'">{{ whiteAccuracy }}%</span>
               </p>
             </div>
+            <GameCapturedPieces :captured="captured.white" color="white" :material-diff="captured.materialDiff" />
           </div>
           <div class="shrink-0 text-xs text-muted">{{ $t('result') }}: {{ game?.result }}</div>
         </div>
@@ -74,7 +76,7 @@
         </div>
       </div>
 
-      <div class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0 lg:gap-4">
+      <div class="flex w-full flex-col gap-3 lg:w-80 lg:shrink-0 lg:gap-4 lg:min-h-0 lg:overflow-y-auto">
         <div v-if="currentAnalyzedMove" class="rounded-lg bg-elevated p-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ currentAnalyzedMove.san }}</span>
@@ -118,6 +120,10 @@
 </template>
 
 <script setup lang="ts">
+import { Chess } from 'chess.js'
+import type { DrawShape } from 'chessground/draw'
+import { createMoveBadge } from '~/composables/useMoveBadge'
+
 definePageMeta({ layout: 'game' })
 
 const route = useRoute()
@@ -136,7 +142,7 @@ const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
 const boardConfig = { viewOnly: true }
 
 const gameContainer = ref<HTMLElement | null>(null)
-const { boardSize } = useBoardSize(gameContainer, 120)
+const { boardSize } = useBoardSize(gameContainer, 120, 36)
 const { resolveAvatar } = useAvatar()
 
 const {
@@ -144,6 +150,9 @@ const {
   currentEval, currentAnalyzedMove, whiteAccuracy, blackAccuracy,
   goToMove, goNext, goPrev, goFirst, goLast, startAnalysis,
 } = useAnalysis(gameId)
+
+const currentFen = computed(() => positions.value[currentMoveIndex.value] ?? '')
+const captured = useCapturedPieces(currentFen)
 
 const evalForBar = computed(() => {
   const ev = currentEval.value
@@ -162,13 +171,32 @@ const formatEval = (cp: number) => {
 
 const qualityBadge = (quality: string) => {
   switch (quality) {
+    case 'brilliant': return 'bg-emerald-500/20 text-emerald-400'
     case 'best': return 'bg-success/20 text-success'
-    case 'good': return 'bg-info/20 text-info'
-    case 'inaccuracy': return 'bg-warning/20 text-warning'
-    case 'mistake': return 'bg-warning/20 text-warning'
+    case 'good': return 'bg-sky-500/20 text-sky-400'
+    case 'inaccuracy': return 'bg-amber-500/20 text-amber-400'
+    case 'mistake': return 'bg-orange-500/20 text-orange-400'
     case 'blunder': return 'bg-error/20 text-error'
     default: return 'bg-accented text-default'
   }
+}
+
+function parseSanMove(fen: string, san: string): { from: string; to: string } | null {
+  try {
+    const c = new Chess(fen)
+    const m = c.move(san)
+    if (m) return { from: m.from, to: m.to }
+  } catch {}
+  return null
+}
+
+function getAttackedSquares(fen: string): string[] {
+  try {
+    const c = new Chess(fen)
+    const moves = c.moves({ verbose: true })
+    return [...new Set(moves.filter(m => m.captured).map(m => m.to))]
+  } catch {}
+  return []
 }
 
 const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
@@ -177,7 +205,33 @@ const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
 
 const showPosition = (index: number) => {
   if (!boardApi.value || !positions.value[index]) return
-  boardApi.value.setPosition(positions.value[index])
+  const fen = positions.value[index]
+  const shapes: DrawShape[] = []
+
+  const lastIdx = index - 1
+  if (lastIdx >= 0 && lastIdx < analysis.value.analyzedMoves.length) {
+    const lastMove = analysis.value.analyzedMoves[lastIdx]!
+    shapes.push({ orig: lastMove.from as any, dest: lastMove.to as any, brush: 'green' })
+
+    const badge = createMoveBadge(lastMove.to, lastMove.quality)
+    if (badge) shapes.push(badge)
+
+    const prevFen = positions.value[lastIdx]!
+    if (lastMove.bestMove && lastMove.bestMove !== lastMove.san) {
+      const bm = parseSanMove(prevFen, lastMove.bestMove)
+      if (bm) shapes.push({ orig: bm.from as any, dest: bm.to as any, brush: 'blue' })
+    }
+  }
+
+  for (const sq of getAttackedSquares(fen)) {
+    shapes.push({ orig: sq as any, brush: 'yellow' })
+  }
+
+  const lastMove = lastIdx >= 0 && lastIdx < analysis.value.analyzedMoves.length
+    ? analysis.value.analyzedMoves[lastIdx]!
+    : undefined
+
+  boardApi.value.setPosition(fen, lastMove ? { from: lastMove.from, to: lastMove.to } : undefined, shapes.length > 0 ? shapes : undefined)
 }
 
 watch(currentMoveIndex, (idx) => {

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col">
+  <div class="flex flex-col max-h-48 lg:max-h-96">
     <div class="flex items-center justify-between rounded-lg bg-elevated px-3 py-2">
       <span class="text-sm font-medium text-default">{{ $t('moves') }}</span>
       <span class="text-sm text-muted">{{ analyzedMoves.length }}</span>
@@ -24,7 +24,7 @@
               :class="moveClass(pair.whiteIdx)"
               @click="$emit('goToMove', pair.whiteIdx + 1)"
             >
-              <span :class="qualityDot(pair.white?.quality)" class="mr-1 inline-block size-2 rounded-full" />
+              <span :class="qualityClass(pair.white?.quality)" class="mr-1 inline-block w-4 text-center text-xs font-bold">{{ qualitySymbol(pair.white?.quality) }}</span>
               <span class="piece-icon">{{ pieceIcon(pair.white?.san) }}</span>{{ pair.white?.san }}
             </td>
             <td
@@ -33,7 +33,7 @@
               :class="moveClass(pair.blackIdx)"
               @click="$emit('goToMove', pair.blackIdx + 1)"
             >
-              <span :class="qualityDot(pair.black.quality)" class="mr-1 inline-block size-2 rounded-full" />
+              <span :class="qualityClass(pair.black.quality)" class="mr-1 inline-block w-4 text-center text-xs font-bold">{{ qualitySymbol(pair.black.quality) }}</span>
               <span class="piece-icon">{{ pieceIcon(pair.black?.san) }}</span>{{ pair.black.san }}
             </td>
             <td v-else class="px-2 py-0.5" />
@@ -85,14 +85,27 @@ const pairedMoves = computed(() => {
   return pairs
 })
 
-const qualityDot = (quality?: string) => {
+const qualitySymbol = (quality?: string): string => {
   switch (quality) {
-    case 'best': return 'bg-success'
-    case 'good': return 'bg-info'
-    case 'inaccuracy': return 'bg-warning'
-    case 'mistake': return 'bg-warning'
-    case 'blunder': return 'bg-error'
-    default: return 'bg-muted'
+    case 'brilliant': return '!!'
+    case 'best': return '!'
+    case 'good': return '!?'  
+    case 'inaccuracy': return '?!'
+    case 'mistake': return '?'
+    case 'blunder': return '??'
+    default: return ''
+  }
+}
+
+const qualityClass = (quality?: string): string => {
+  switch (quality) {
+    case 'brilliant': return 'text-emerald-400'
+    case 'best': return 'text-success'
+    case 'good': return 'text-sky-400'
+    case 'inaccuracy': return 'text-amber-400'
+    case 'mistake': return 'text-orange-400'
+    case 'blunder': return 'text-error'
+    default: return 'text-transparent'
   }
 }
 
@@ -103,8 +116,17 @@ const moveClass = (moveIdx: number) => {
 watch(() => props.currentMoveIndex, async () => {
   await nextTick()
   if (scrollContainer.value) {
-    const active = scrollContainer.value.querySelector('.bg-accented')
-    if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const active = scrollContainer.value.querySelector('.bg-accented') as HTMLElement | null
+    if (active) {
+      const container = scrollContainer.value
+      const containerRect = container.getBoundingClientRect()
+      const activeRect = active.getBoundingClientRect()
+      if (activeRect.top < containerRect.top) {
+        container.scrollTop -= (containerRect.top - activeRect.top) - 4
+      } else if (activeRect.bottom > containerRect.bottom) {
+        container.scrollTop += (activeRect.bottom - containerRect.bottom) + 4
+      }
+    }
   }
 })
 </script>

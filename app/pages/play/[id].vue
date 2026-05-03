@@ -15,6 +15,7 @@
               <span v-else>{{ opponentInfo?.rating || '???' }}</span>
             </p>
           </div>
+          <GameCapturedPieces :captured="opponentCaptured" :color="playerColor === 'white' ? 'black' : 'white'" :material-diff="captured.materialDiff" />
         </div>
         <div v-if="!isWaiting" class="font-mono text-xl lg:text-lg" :class="opponentTimeClass" role="timer" :aria-label="`Opponent time: ${formatTime(opponentTime)}`">
           {{ formatTime(opponentTime) }}
@@ -27,8 +28,8 @@
               :board-config="boardConfig"
               :player-color="playerColor"
               :reactive-config="true"
-              @board-created="onBoardCreated"
-              @move="onBoardMove"
+              @board-created="handleBoardCreated"
+              @move="handleBoardMove"
             />
           </ClientOnly>
       </div>
@@ -44,6 +45,7 @@
             <p class="truncate text-sm font-semibold lg:text-base">{{ playerInfo?.username || $t('you') }}</p>
             <p class="text-xs text-muted lg:text-sm">{{ playerInfo?.rating || '???' }}</p>
           </div>
+          <GameCapturedPieces :captured="playerCaptured" :color="playerColor" :material-diff="captured.materialDiff" />
         </div>
         <div v-if="!isWaiting" class="font-mono text-xl lg:text-lg" :class="playerTimeClass" role="timer" :aria-label="`Your time: ${formatTime(playerTime)}`">
           {{ formatTime(playerTime) }}
@@ -185,6 +187,33 @@ const {
   onBoardCreated,
   onBoardMove,
 } = useGameSession(gameId)
+
+const localBoardApi = ref<ReturnType<typeof useChessground> | null>(null)
+const currentFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+const captured = useCapturedPieces(currentFen)
+
+const updateFen = () => {
+  if (localBoardApi.value) {
+    currentFen.value = localBoardApi.value.getFen()
+  }
+}
+
+const handleBoardCreated = (api: ReturnType<typeof useChessground>) => {
+  localBoardApi.value = api
+  onBoardCreated(api)
+}
+
+const handleBoardMove = (move: { from: string; to: string; promotion?: string; san: string; captured?: string }) => {
+  onBoardMove(move)
+  nextTick(updateFen)
+}
+
+watch(() => moves.value.length, () => {
+  nextTick(updateFen)
+})
+
+const playerCaptured = computed(() => playerColor.value === 'white' ? captured.value.white : captured.value.black)
+const opponentCaptured = computed(() => playerColor.value === 'white' ? captured.value.black : captured.value.white)
 
 watch([playerInfo, opponentInfo], ([p, o]) => {
   const ids = [p?.id, o?.id].filter((id): id is number => id != null)

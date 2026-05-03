@@ -20,17 +20,30 @@
 
         <div class="flex items-center justify-center gap-3">
           <UTooltip :text="$t('continueWithGitHub')">
-            <UButton icon="i-simple-icons-github" variant="outline" size="xl" @click="oauthLogin('github')" />
+            <UButton variant="outline" size="xl" @click="oauthLogin('github')">
+              <template #leading>
+                <img src="/Github_logo_svg.svg" alt="GitHub" class="size-5" />
+              </template>
+            </UButton>
           </UTooltip>
           <UTooltip :text="$t('continueWithGoogle')">
-            <UButton icon="i-simple-icons-google" variant="outline" size="xl" @click="oauthLogin('google')" />
+            <UButton variant="outline" size="xl" @click="oauthLogin('google')">
+              <template #leading>
+                <img src="/Google__G__logo.svg" alt="Google" class="size-5" />
+              </template>
+            </UButton>
           </UTooltip>
           <UTooltip :text="$t('continueWithYandex')">
             <UButton variant="outline" size="xl" @click="oauthLogin('yandex')">
               <template #leading>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M11.204 2.156c-.84-.012-1.888.36-2.496.936-.708.672-1.056 1.548-1.056 2.604 0 2.16 1.02 3.696 3.048 4.572L5.88 21.42h3.132l4.224-9.54h.072l4.248 9.54H20.7L15.66 10.2c2.04-.876 3.072-2.4 3.072-4.512 0-1.044-.348-1.908-1.044-2.58-.708-.684-1.596-1.008-2.676-.948V6.36c.576.06.948.252 1.164.564.216.324.336.768.336 1.332 0 .816-.264 1.452-.792 1.908-.516.444-1.224.672-2.1.672-.9 0-1.62-.228-2.148-.684-.528-.456-.792-1.104-.792-1.932 0-.552.12-.984.36-1.296.24-.312.612-.504 1.116-.564V2.16c-.192-.004-.388-.008-.584-.012z"/>
-                </svg>
+                <img src="/Yandex_icon.svg" alt="Yandex" class="size-5" />
+              </template>
+            </UButton>
+          </UTooltip>
+          <UTooltip :text="$t('continueWithDiscord')">
+            <UButton variant="outline" size="xl" @click="oauthLogin('discord')">
+              <template #leading>
+                <img src="/Discord_logo_svg.svg" alt="Discord" class="size-5" />
               </template>
             </UButton>
           </UTooltip>
@@ -80,6 +93,7 @@ const onLogin = async () => {
     await fetchSession()
     open.value = false
     toast.add({ title: t('signedIn'), color: 'success' })
+    await useSettings().refresh()
   } catch (e) {
     const err = e as FetchError
     toast.add({ title: err.data?.statusMessage || t('loginFailed'), color: 'error' })

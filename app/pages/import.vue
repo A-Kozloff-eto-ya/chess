@@ -77,6 +77,7 @@
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium">{{ loadedGame?.headers?.Black || $t('black') }}</span>
+            <GameCapturedPieces :captured="captured.black" color="black" :material-diff="captured.materialDiff" />
           </div>
           <div v-if="analysis && currentMoveIndex > 0" class="font-mono text-sm" :class="currentEval >= 0 ? 'text-inverted' : 'text-default'">
             {{ formatEval(currentEval) }}
@@ -101,6 +102,7 @@
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
           <div class="flex items-center gap-2">
             <span class="text-sm font-medium">{{ loadedGame?.headers?.White || $t('white') }}</span>
+            <GameCapturedPieces :captured="captured.white" color="white" :material-diff="captured.materialDiff" />
           </div>
           <div class="text-sm text-muted">{{ loadedGame?.result || '*' }}</div>
         </div>
@@ -173,6 +175,8 @@
 <script setup lang="ts">
 import { Chess } from 'chess.js'
 import type { AnalyzedMove } from '~/types'
+import type { DrawShape } from 'chessground/draw'
+import { createMoveBadge } from '~/composables/useMoveBadge'
 
 const { parsePgn } = usePgn()
 const { t } = useI18n()
@@ -191,6 +195,7 @@ const boardConfig = { viewOnly: true, coordinates: true }
 
 const positions = ref<string[]>([])
 const sanMoves = ref<string[]>([])
+const movesList = ref<{ from: string; to: string; promotion?: string; san: string }[]>([])
 const currentMoveIndex = ref(0)
 const analysisStatus = ref<'idle' | 'analyzing' | 'completed' | 'failed'>('idle')
 const progress = ref(0)
@@ -229,22 +234,45 @@ const formatEval = (cp: number) => {
 
 const qualityBadge = (quality: string) => {
   switch (quality) {
+    case 'brilliant': return 'bg-emerald-500/20 text-emerald-400'
     case 'best': return 'bg-success/20 text-success'
-    case 'good': return 'bg-info/20 text-info'
-    case 'inaccuracy': return 'bg-warning/20 text-warning'
-    case 'mistake': return 'bg-warning/20 text-warning'
+    case 'good': return 'bg-sky-500/20 text-sky-400'
+    case 'inaccuracy': return 'bg-amber-500/20 text-amber-400'
+    case 'mistake': return 'bg-orange-500/20 text-orange-400'
     case 'blunder': return 'bg-error/20 text-error'
     default: return 'bg-accented text-default'
   }
 }
 
 const gameContainer = ref<HTMLElement | null>(null)
-const { boardSize } = useBoardSize(gameContainer, 160)
+const { boardSize } = useBoardSize(gameContainer, 160, 36)
+
+const currentFen = computed(() => positions.value[currentMoveIndex.value] ?? '')
+const captured = useCapturedPieces(currentFen)
+
+function parseSanMove(fen: string, san: string): { from: string; to: string } | null {
+  try {
+    const c = new Chess(fen)
+    const m = c.move(san)
+    if (m) return { from: m.from, to: m.to }
+  } catch {}
+  return null
+}
+
+function getAttackedSquares(fen: string): string[] {
+  try {
+    const c = new Chess(fen)
+    const moves = c.moves({ verbose: true })
+    return [...new Set(moves.filter(m => m.captured).map(m => m.to))]
+  } catch {}
+  return []
+}
 
 const buildPositions = (moves: { from: string; to: string; promotion?: string; san: string }[]) => {
   const chess = new Chess()
   positions.value = [chess.fen()]
   sanMoves.value = []
+  movesList.value = [...moves]
   for (const m of moves) {
     try {
       chess.move({ from: m.from, to: m.to, promotion: m.promotion })
@@ -259,7 +287,34 @@ const buildPositions = (moves: { from: string; to: string; promotion?: string; s
 
 const showPosition = (index: number) => {
   if (!boardApi.value || !positions.value[index]) return
-  boardApi.value.setPosition(positions.value[index])
+  const fen = positions.value[index]!
+  const shapes: DrawShape[] = []
+
+  if (index > 0 && index - 1 < movesList.value.length) {
+    const prev = movesList.value[index - 1]!
+    shapes.push({ orig: prev.from as any, dest: prev.to as any, brush: 'green' })
+
+    if (analysis.value && index - 1 < analysis.value.analyzedMoves.length) {
+      const am = analysis.value.analyzedMoves[index - 1]!
+      const badge = createMoveBadge(prev.to, am.quality)
+      if (badge) shapes.push(badge)
+      if (am.bestMove && am.bestMove !== am.san) {
+        const prevFen = positions.value[index - 1]!
+        const bm = parseSanMove(prevFen, am.bestMove)
+        if (bm) shapes.push({ orig: bm.from as any, dest: bm.to as any, brush: 'blue' })
+      }
+    }
+  }
+
+  for (const sq of getAttackedSquares(fen)) {
+    shapes.push({ orig: sq as any, brush: 'yellow' })
+  }
+
+  const lastMove = index > 0 && index - 1 < movesList.value.length
+    ? movesList.value[index - 1]!
+    : undefined
+
+  boardApi.value.setPosition(fen, lastMove ? { from: lastMove.from, to: lastMove.to } : undefined, shapes.length > 0 ? shapes : undefined)
 }
 
 const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
@@ -313,6 +368,7 @@ const loadFen = () => {
     }
     positions.value = [chess.fen()]
     sanMoves.value = []
+    movesList.value = []
     currentMoveIndex.value = 0
 
     if (boardApi.value) {
@@ -395,7 +451,8 @@ const startEngineAnalysis = async () => {
         else blackAccuracies.push(acc)
       }
 
-      const quality: AnalyzedMove['quality'] = wcLoss < 0.02 ? 'best'
+      const quality: AnalyzedMove['quality'] = wcLoss < 0.02
+        ? (Math.abs(evalBefore) < DECISIVE && evalBefore * evalAfter < 0 && wcLoss < 0.01 ? 'brilliant' : 'best')
         : wcLoss < 0.1 ? 'good'
         : wcLoss < 0.2 ? 'inaccuracy'
         : wcLoss < 0.3 ? 'mistake'
