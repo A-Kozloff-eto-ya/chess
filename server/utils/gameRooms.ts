@@ -18,6 +18,7 @@ export interface GameRoom {
   peers: Map<number, { send: (data: string) => void }>
   rematchOfferedBy: number | null
   rematchAccepted: boolean
+  disconnectTimers: Map<number, ReturnType<typeof setTimeout>>
 }
 
 const gameRooms = new Map<string, GameRoom>()
@@ -43,12 +44,30 @@ export function createGameRoom(gameId: string, timeControl: string = '10+0'): Ga
     peers: new Map(),
     rematchOfferedBy: null,
     rematchAccepted: false,
+    disconnectTimers: new Map(),
   }
   gameRooms.set(gameId, room)
   return room
 }
 
+export function clearDisconnectTimer(room: GameRoom, userId: number) {
+  const timer = room.disconnectTimers.get(userId)
+  if (timer) {
+    clearTimeout(timer)
+    room.disconnectTimers.delete(userId)
+  }
+}
+
+export function setDisconnectTimer(room: GameRoom, userId: number, timeoutMs: number, callback: () => void) {
+  clearDisconnectTimer(room, userId)
+  room.disconnectTimers.set(userId, setTimeout(callback, timeoutMs))
+}
+
 export function removeGameRoom(gameId: string): void {
+  const room = gameRooms.get(gameId)
+  if (room) {
+    for (const timer of room.disconnectTimers.values()) clearTimeout(timer)
+  }
   gameRooms.delete(gameId)
   roomLocks.delete(gameId)
 }
@@ -128,6 +147,7 @@ export async function restoreRoomsFromDB(): Promise<void> {
         peers: new Map(),
         rematchOfferedBy: null,
         rematchAccepted: false,
+        disconnectTimers: new Map(),
       }
 
       if (game.fen && game.fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {

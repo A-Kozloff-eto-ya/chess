@@ -129,16 +129,6 @@
           :icon="copiedCSS ? 'i-lucide-copy-check' : 'i-lucide-copy'"
           @click="copyToClipboard(exportCSS(), 'css')"
         />
-        <UButton
-          v-if="hasConfigChanges"
-          color="neutral"
-          variant="soft"
-          size="sm"
-          label="app.config.ts"
-          class="flex-1 text-xs"
-          :icon="copiedConfig ? 'i-lucide-copy-check' : 'i-lucide-copy'"
-          @click="copyToClipboard(exportConfig(), 'config')"
-        />
         <UTooltip :text="$t('themeResetTheme')">
           <UButton
             color="neutral"

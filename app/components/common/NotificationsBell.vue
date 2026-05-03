@@ -26,9 +26,9 @@
             >
               <div class="flex items-center gap-2">
                 <div class="relative">
-                  <UAvatar :src="req.from.avatar || undefined" size="xs" />
+                  <UAvatar :src="resolveAvatar(req.from.avatar)" size="xs" />
                   <span v-if="isOnline(req.from.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
-                  <span v-else-if="getStatus(req.from.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
+                  <span v-else-if="getStatus(req.from.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-error" />
                 </div>
                 <div>
                   <p class="text-sm font-medium">{{ req.from.username }}</p>
@@ -53,6 +53,7 @@ import type { FetchError } from '~/../shared/types'
 const { loggedIn } = useUserSession()
 const { friendRequests, friendshipEvents, pendingCount, acceptRequest, declineRequest } = useNotifications()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 const { t } = useI18n()
 const toast = useToast()
 

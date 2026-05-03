@@ -29,13 +29,13 @@
           class="flex items-center gap-3 px-3 py-2 hover:bg-elevated/50 transition-colors"
           @mousedown.prevent="navigateToProfile(u.username)"
         >
-          <UAvatar :src="u.avatar || undefined" size="xs" />
+          <UAvatar :src="resolveAvatar(u.avatar)" size="xs" />
           <div>
             <p class="text-sm font-medium">{{ u.username }}</p>
             <p class="text-xs text-muted">{{ u.rating }} ELO</p>
           </div>
           <span v-if="isOnline(u.id)" class="ml-auto size-2 rounded-full bg-success" />
-          <span v-else-if="getStatus(u.id)?.online === false" class="ml-auto size-2 rounded-full bg-muted" />
+          <span v-else-if="getStatus(u.id)?.online === false" class="ml-auto size-2 rounded-full bg-error" />
         </NuxtLink>
       </div>
     </div>
@@ -50,6 +50,7 @@ const results = ref<UserInfo[]>([])
 const loading = ref(false)
 const focused = ref(false)
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const search = async () => {

@@ -1,7 +1,7 @@
-import { getGameRoom, createGameRoom, withRoomLock, getActiveRooms, broadcastToRoom, persistRoomState } from '../utils/gameRooms'
+import { getGameRoom, createGameRoom, withRoomLock, getActiveRooms, broadcastToRoom, persistRoomState, clearDisconnectTimer, setDisconnectTimer } from '../utils/gameRooms'
 import { validateMove, isGameOver, generatePgn } from '../utils/chess'
 import { calculateNewRating } from '../utils/rating'
-import { addPeer as registerPeer, removePeer as unregisterPeer, broadcastToUsers } from '../utils/peerRegistry'
+import { addPeer as registerPeer, removePeer as unregisterPeer, broadcastToUsers, sendToUser } from '../utils/peerRegistry'
 import { games, users, friendships, chatMessages } from '../db/schema'
 import { eq, or, and, desc } from 'drizzle-orm'
 import type { GameMove, UserInfo } from '../../shared/types'
@@ -97,6 +97,22 @@ async function getFriendIds(userId: number): Promise<number[]> {
   return rows.map(r => r.requesterId === userId ? r.addresseeId : r.requesterId)
 }
 
+async function endGameOnDisconnect(room: GameRoom, disconnectedUserId: number, gameId: string) {
+  if (room.status !== 'active') return
+  const result = room.whitePlayerId === disconnectedUserId ? '0-1' : '1-0'
+  room.status = 'completed'
+  const payload = JSON.stringify({ type: 'game_over', gameId, result, reason: 'disconnect' })
+  broadcastToRoom(room, payload)
+  try {
+    await db.update(games).set({
+      status: 'completed', result, endedAt: new Date(),
+      pgn: generatePgn(room.moveList.map((m: GameMove) => m.san)),
+      whiteTimeMs: room.whiteTime, blackTimeMs: room.blackTime, lastMoveAt: new Date(room.lastMoveAt),
+    }).where(eq(games.id, Number(gameId)))
+  } catch (e) { console.error('[WS] Failed to save disconnect loss:', e) }
+  await updateRatings(room.whitePlayerId, room.blackPlayerId, result)
+}
+
 export default defineWebSocketHandler({
   async upgrade(request) {
     try {
@@ -163,7 +179,14 @@ export default defineWebSocketHandler({
             if (game.whiteTimeMs != null) room.whiteTime = game.whiteTimeMs
             if (game.blackTimeMs != null) room.blackTime = game.blackTimeMs
             if (game.lastMoveAt) room.lastMoveAt = new Date(game.lastMoveAt).getTime()
-            if (game.status === 'active' || game.status === 'waiting') room.status = game.status
+            if (game.status) room.status = game.status as typeof room.status
+          } else if (room.status === 'waiting' && (!room.whitePlayerId || !room.blackPlayerId)) {
+            const game = await db.select().from(games).where(eq(games.id, Number(gameId))).then(r => r[0] as DbGameRow | undefined)
+            if (game) {
+              if (game.whitePlayerId && !room.whitePlayerId) room.whitePlayerId = game.whitePlayerId
+              if (game.blackPlayerId && !room.blackPlayerId) room.blackPlayerId = game.blackPlayerId
+              if (room.whitePlayerId && room.blackPlayerId) room.status = 'active'
+            }
           }
 
           let color: 'white' | 'black' | null = null
@@ -191,6 +214,7 @@ export default defineWebSocketHandler({
           peer.subscribe(`game:${gameId}`)
           pd.gameId = gameId
           room.peers.set(userId, peer)
+          clearDisconnectTimer(room, userId)
 
           const opponentId = color === 'white' ? room.blackPlayerId : room.whitePlayerId
           const opponent = opponentId
@@ -212,8 +236,10 @@ export default defineWebSocketHandler({
             whiteTime: room.whiteTime, blackTime: room.blackTime,
             lastMoveAt: room.lastMoveAt, fen: room.chess.fen(),
             moveCount: room.moveList.length,
+            moves: room.moveList.map((m: GameMove) => m.san),
             turn: room.chess.turn() === 'w' ? 'white' as const : 'black' as const,
             chatHistory,
+            rematchOfferedBy: room.rematchOfferedBy,
           }))
 
           if (opponentId) {
@@ -289,7 +315,7 @@ export default defineWebSocketHandler({
           gameId,
           fen: room.chess.fen(),
           moveCount: room.moveList.length,
-          lastMove: { from: move.from, to: move.to, san: result.move.san },
+          lastMove: { from: move.from, to: move.to, san: result.move.san, promotion: move.promotion, captured: result.move.captured },
           turn: room.chess.turn() === 'w' ? 'white' as const : 'black' as const,
           whiteTime: room.whiteTime,
           blackTime: room.blackTime,
@@ -300,6 +326,15 @@ export default defineWebSocketHandler({
         peer.send(statePayload)
 
         await persistRoomState(room)
+
+        const clockPayload = JSON.stringify({
+          type: 'clock_sync',
+          gameId,
+          whiteTime: room.whiteTime,
+          blackTime: room.blackTime,
+        })
+        peer.publish(`game:${gameId}`, clockPayload)
+        peer.send(clockPayload)
 
         const gameState = isGameOver(room.chess.fen())
         if (gameState.gameOver) {
@@ -390,6 +425,12 @@ export default defineWebSocketHandler({
           }).where(eq(games.id, Number(gameId)))
         } catch (e) { console.error('[WS] Failed to save draw:', e) }
         await updateRatings(room.whitePlayerId, room.blackPlayerId, '1/2-1/2')
+        break
+      }
+
+      case 'decline_draw': {
+        const gameId = msg.gameId!
+        peer.publish(`game:${gameId}`, JSON.stringify({ type: 'draw_declined' }))
         break
       }
 
@@ -504,6 +545,44 @@ export default defineWebSocketHandler({
         break
       }
 
+      case 'spectate': {
+        const gameId = msg.gameId!
+        await withRoomLock(gameId, async () => {
+          let room = getGameRoom(gameId)
+
+          if (!room) {
+            const game = await db.select().from(games).where(eq(games.id, Number(gameId))).then(r => r[0] as DbGameRow | undefined)
+            if (!game) {
+              peer.send(JSON.stringify({ type: 'error', message: 'Game not found' }))
+              return
+            }
+            room = createGameRoom(String(game.id), game.timeControl || '10+0')
+            room.whitePlayerId = game.whitePlayerId
+            room.blackPlayerId = game.blackPlayerId
+            if (game.fen && game.fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+              room.chess.load(game.fen)
+            }
+            try { room.moveList = JSON.parse(game.moves ?? '[]') } catch { room.moveList = [] }
+            if (game.whiteTimeMs != null) room.whiteTime = game.whiteTimeMs
+            if (game.blackTimeMs != null) room.blackTime = game.blackTimeMs
+            if (game.lastMoveAt) room.lastMoveAt = new Date(game.lastMoveAt).getTime()
+            if (game.status) room.status = game.status as typeof room.status
+          }
+
+          peer.subscribe(`game:${gameId}`)
+
+          peer.send(JSON.stringify({
+            type: 'joined', gameId, color: 'white' as const,
+            opponent: null,
+            whiteTime: room.whiteTime, blackTime: room.blackTime,
+            lastMoveAt: room.lastMoveAt, fen: room.chess.fen(),
+            moveCount: room.moveList.length,
+            turn: room.chess.turn() === 'w' ? 'white' as const : 'black' as const,
+          }))
+        })
+        break
+      }
+
       case 'leave_game': {
         const gameId = msg.gameId!
         const room = getGameRoom(gameId)
@@ -511,6 +590,7 @@ export default defineWebSocketHandler({
           room.peers.delete(userId)
           if (room.status === 'active') {
             broadcastToRoom(room, JSON.stringify({ type: 'opponent_disconnected', gameId }), userId)
+            setDisconnectTimer(room, userId, 60_000, () => endGameOnDisconnect(room, userId, gameId))
           }
         }
         peer.unsubscribe(`game:${gameId}`)
@@ -537,6 +617,7 @@ export default defineWebSocketHandler({
         room.peers.delete(userId)
         if (room.status === 'active') {
           peer.publish(`game:${gameId}`, JSON.stringify({ type: 'opponent_disconnected', gameId }))
+          setDisconnectTimer(room, userId!, 60_000, () => endGameOnDisconnect(room, userId!, gameId))
         }
       }
       peer.unsubscribe(`game:${gameId}`)

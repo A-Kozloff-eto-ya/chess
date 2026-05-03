@@ -35,9 +35,9 @@
           >
             <div class="flex items-center gap-2">
               <div class="relative">
-                <UAvatar :src="friend.avatar || undefined" size="xs" />
+                <UAvatar :src="resolveAvatar(friend.avatar)" size="xs" />
                 <span v-if="isOnline(friend.id)" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
-                <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-muted" />
+                <span v-else-if="getStatus(friend.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-error" />
               </div>
               <div>
                 <p class="text-sm font-medium">{{ friend.username }}</p>
@@ -67,6 +67,7 @@ const { t } = useI18n()
 const toast = useToast()
 const { sendGameInvite } = useNotifications()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 
 const open = computed({
   get: () => props.open,

@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full flex-col lg:h-auto">
     <div v-if="status === 'loading' || status === 'analyzing'" class="flex flex-1 items-center justify-center">
-      <div class="text-center">
+      <div class="text-center p-4">
         <UIcon name="i-lucide-brain" class="mx-auto mb-3 size-10 animate-pulse text-primary" />
         <p class="font-semibold">{{ $t('analyzingGame') }}</p>
         <p class="mt-1 text-sm text-muted">{{ $t('analysisMovetime') }}</p>
@@ -13,7 +13,7 @@
     </div>
 
     <div v-else-if="status === 'failed'" class="flex flex-1 items-center justify-center">
-      <div class="text-center">
+      <div class="text-center p-4">
         <UIcon name="i-lucide-alert-triangle" class="mx-auto mb-3 size-10 text-error" />
         <p class="font-semibold">{{ $t('analysisFailed') }}</p>
         <UButton :label="$t('retry')" variant="outline" class="mt-4" @click="startAnalysis" />
@@ -24,7 +24,7 @@
       <div class="flex flex-1 flex-col items-center gap-1 min-w-0 min-h-0 lg:gap-2">
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
           <div class="flex items-center gap-2 min-w-0">
-            <UAvatar :src="game?.blackPlayer?.avatar || undefined" size="sm" />
+            <UAvatar :src="resolveAvatar(game?.blackPlayer?.avatar)" size="sm" />
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold">{{ game?.blackPlayer?.username }}</p>
               <p class="text-xs text-muted">
@@ -48,7 +48,7 @@
 
         <div class="flex w-full items-center justify-between" :style="{ maxWidth: boardSize + 'px' }">
           <div class="flex items-center gap-2 min-w-0">
-            <UAvatar :src="game?.whitePlayer?.avatar || undefined" size="sm" />
+            <UAvatar :src="resolveAvatar(game?.whitePlayer?.avatar)" size="sm" />
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold">{{ game?.whitePlayer?.username }}</p>
               <p class="text-xs text-muted">
@@ -137,6 +137,7 @@ const boardConfig = { viewOnly: true }
 
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer, 120)
+const { resolveAvatar } = useAvatar()
 
 const {
   analysis, status, progress, currentMoveIndex, positions,

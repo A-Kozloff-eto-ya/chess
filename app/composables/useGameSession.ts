@@ -28,10 +28,55 @@ export function useGameSession(gameId: string) {
   const isWaiting = ref(true)
   const inviteCode = ref('')
 
+  const opponentDisconnected = ref(false)
+  const disconnectCountdown = ref(0)
+  let disconnectInterval: ReturnType<typeof setInterval> | null = null
+
+  const startDisconnectCountdown = () => {
+    stopDisconnectCountdown()
+    disconnectCountdown.value = 60
+    opponentDisconnected.value = true
+    disconnectInterval = setInterval(() => {
+      disconnectCountdown.value--
+      if (disconnectCountdown.value <= 0) {
+        stopDisconnectCountdown()
+      }
+    }, 1000)
+  }
+
+  const stopDisconnectCountdown = () => {
+    opponentDisconnected.value = false
+    disconnectCountdown.value = 0
+    if (disconnectInterval) {
+      clearInterval(disconnectInterval)
+      disconnectInterval = null
+    }
+  }
+
   const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
+  const pendingFen = ref<string | null>(null)
   const serverMoveCount = ref(0)
   let pendingLocalMove = false
   let applyingRemoteMove = false
+
+  const executePremove = () => {
+    if (!boardApi.value || gameOver.value || isWaiting.value) return
+
+    const turn = boardApi.value.getTurnColor()
+    const myTurn = playerColor.value === 'white' ? 'w' : 'b'
+    if (turn !== myTurn) return
+
+    const result = boardApi.value.tryPlayPremove()
+    if (!result) return
+
+    pendingLocalMove = true
+    sendMove(gameId, { from: result.from, to: result.to, promotion: result.promotion })
+    if (result.captured) {
+      sounds.capture()
+    } else {
+      sounds.move()
+    }
+  }
 
   const playerTime = computed(() => playerColor.value === 'white' ? whiteTime.value : blackTime.value)
   const opponentTime = computed(() => playerColor.value === 'white' ? blackTime.value : whiteTime.value)
@@ -46,13 +91,16 @@ export function useGameSession(gameId: string) {
 
   const boardConfig = reactive({
     orientation: 'white' as 'white' | 'black',
-    viewOnly: true,
+    viewOnly: false,
     premovable: { enabled: true },
+    movableColor: 'white' as 'white' | 'black' | 'both' | undefined,
+    movableEnabled: true,
   })
 
-  watch([isWaiting, gameOver], () => {
-    boardConfig.viewOnly = isWaiting.value || gameOver.value
-  })
+  watch([isWaiting, gameOver, playerColor], () => {
+    boardConfig.movableColor = playerColor.value
+    boardConfig.movableEnabled = !isWaiting.value && !gameOver.value
+  }, { immediate: true })
 
   const playerInfo = computed(() => {
     if (!gameData.value || !user.value) return null
@@ -93,34 +141,6 @@ export function useGameSession(gameId: string) {
 
   const chatMessages = ref<{ from: string; message: string; mine: boolean }[]>([])
 
-  const evaluation = ref<{ type: 'cp' | 'mate'; value: number } | null>(null)
-  const evalMoves = ref<string[]>([])
-  let evalPending = false
-
-  const fetchEval = async () => {
-    if (evalPending || gameOver.value || isWaiting.value) return
-    if (evalMoves.value.length === 0) {
-      evaluation.value = null
-      return
-    }
-    evalPending = true
-    try {
-      const res = await $fetch<{ eval: { type: 'cp' | 'mate'; value: number } | null }>('/api/engine/eval', {
-        method: 'POST',
-        body: { sanMoves: evalMoves.value.join(' '), movetime: 500 },
-      })
-      evaluation.value = res.eval
-    } catch {
-      // silently ignore eval errors
-    } finally {
-      evalPending = false
-    }
-  }
-
-  const pushEvalMove = (san: string) => {
-    evalMoves.value.push(san)
-    fetchEval()
-  }
   const fetchGame = async () => {
     try {
       const data = await $fetch<GameResponse>(`/api/games/${gameId}`)
@@ -132,6 +152,10 @@ export function useGameSession(gameId: string) {
         isWaiting.value = false
       }
       inviteCode.value = data.inviteCode || ''
+      const status = (data as any).status
+      if (data.result || status === 'completed' || status === 'abandoned') {
+        gameOver.value = true
+      }
       const tc = parseTimeControl(data.timeControl || '10+0')
       resetClock(tc.base)
     } catch {
@@ -142,11 +166,15 @@ export function useGameSession(gameId: string) {
 
   const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
     boardApi.value = api
+    if (pendingFen.value) {
+      api.setPosition(pendingFen.value)
+      pendingFen.value = null
+    }
   }
 
   const onBoardMove = (move: { from: string; to: string; promotion?: string; san: string; captured?: string }) => {
     if (applyingRemoteMove) return
-    if (gameOver.value || isWaiting.value) return
+    if (gameOver.value) return
     pendingLocalMove = true
     if (move.captured) {
       sounds.capture()
@@ -171,8 +199,29 @@ export function useGameSession(gameId: string) {
     }
     if (msg.whiteTime != null) whiteTime.value = msg.whiteTime
     if (msg.blackTime != null) blackTime.value = msg.blackTime
-    if (msg.moveCount) serverMoveCount.value = msg.moveCount
-    startTimer(activeTurn)
+    if (typeof msg.moveCount === 'number') serverMoveCount.value = msg.moveCount
+    if (msg.fen) {
+      if (boardApi.value) {
+        boardApi.value.setPosition(msg.fen)
+      } else {
+        pendingFen.value = msg.fen
+      }
+    }
+    if (Array.isArray(msg.moves) && msg.moves.length > 0) {
+      moves.value = msg.moves
+    }
+    if (!isWaiting.value && !gameOver.value) {
+      if (msg.lastMoveAt && typeof msg.moveCount === 'number' && msg.moveCount > 0) {
+        const elapsed = Date.now() - msg.lastMoveAt
+        const turn = msg.moveCount % 2 === 0 ? 'white' : 'black'
+        if (turn === 'white' && whiteTime.value > 0) {
+          whiteTime.value = Math.max(0, whiteTime.value - elapsed)
+        } else if (turn === 'black' && blackTime.value > 0) {
+          blackTime.value = Math.max(0, blackTime.value - elapsed)
+        }
+      }
+      startTimer(activeTurn)
+    }
     if (msg.chatHistory?.length) {
       const myId = user.value?.id
       chatMessages.value = msg.chatHistory.map((m: any) => ({
@@ -181,17 +230,27 @@ export function useGameSession(gameId: string) {
         mine: m.userId === myId,
       }))
     }
+    if (msg.rematchOfferedBy && msg.rematchOfferedBy !== user.value?.id) {
+      rematchOfferReceived.value = true
+    }
   }))
 
   cleanups.push(on('opponent_joined', (msg: any) => {
     isWaiting.value = false
+    stopDisconnectCountdown()
     if (playerColor.value === 'white') {
       gameData.value = { ...gameData.value!, blackPlayer: msg.opponent }
     } else {
       gameData.value = { ...gameData.value!, whitePlayer: msg.opponent }
     }
-    startTimer(activeTurn)
+    if (!gameOver.value) {
+      startTimer(activeTurn)
+    }
     toast.add({ title: t('joinedGame', { username: msg.opponent.username }), color: 'success' })
+
+    if (!gameOver.value && boardApi.value && playerColor.value === 'white') {
+      nextTick(() => executePremove())
+    }
   }))
 
   cleanups.push(on('state_update', (msg: any) => {
@@ -199,12 +258,12 @@ export function useGameSession(gameId: string) {
       serverMoveCount.value = msg.moveCount
       if (msg.lastMove) {
         moves.value.push(msg.lastMove.san)
-        pushEvalMove(msg.lastMove.san)
       }
 
       if (pendingLocalMove) {
         pendingLocalMove = false
       } else if (msg.lastMove && boardApi.value) {
+        boardApi.value.preservePremove()
         if (msg.lastMove.captured) {
           sounds.capture()
         } else {
@@ -216,7 +275,10 @@ export function useGameSession(gameId: string) {
           msg.lastMove.to,
           msg.lastMove.promotion,
         )
-        nextTick(() => { applyingRemoteMove = false })
+        nextTick(() => {
+          applyingRemoteMove = false
+          executePremove()
+        })
       }
     }
 
@@ -234,6 +296,7 @@ export function useGameSession(gameId: string) {
 
   cleanups.push(on('game_over', (msg: any) => {
     gameOver.value = true
+    stopDisconnectCountdown()
     gameData.value = { ...gameData.value!, result: msg.result }
     if (msg.reason === 'abort') {
       gameData.value = { ...gameData.value!, result: '*' }
@@ -254,6 +317,7 @@ export function useGameSession(gameId: string) {
 
   cleanups.push(on('opponent_disconnected', () => {
     toast.add({ title: t('opponentDisconnected'), color: 'warning' })
+    startDisconnectCountdown()
   }))
 
   cleanups.push(on('rematch_offered', () => {
@@ -281,6 +345,7 @@ export function useGameSession(gameId: string) {
 
   onUnmounted(() => {
     stopTimer()
+    stopDisconnectCountdown()
     leaveGame(gameId)
     for (const cleanup of cleanups) cleanup()
   })
@@ -311,6 +376,8 @@ export function useGameSession(gameId: string) {
     acceptRematch: () => acceptRematch(gameId),
     declineRematch: () => { rematchOfferReceived.value = false; declineRematch(gameId) },
     chatMessages,
+    opponentDisconnected,
+    disconnectCountdown,
     sendChatMessage: (message: string) => {
       chatMessages.value.push({ from: 'you', message, mine: true })
       sendChat(gameId, message)
@@ -321,6 +388,5 @@ export function useGameSession(gameId: string) {
     formatTime,
     onBoardCreated,
     onBoardMove,
-    evaluation,
   }
 }

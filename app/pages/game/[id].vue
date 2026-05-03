@@ -4,7 +4,7 @@
       <div class="flex w-full items-center justify-between" :style="{ maxWidth: (boardSize + 36) + 'px' }">
         <div class="flex items-center gap-2 min-w-0">
           <div class="relative">
-            <UAvatar :src="game.whitePlayer?.avatar || undefined" size="xs" />
+            <UAvatar :src="resolveAvatar(game.whitePlayer?.avatar)" size="xs" />
             <span v-if="game.whitePlayer && isOnline(game.whitePlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
           </div>
@@ -15,7 +15,7 @@
         <div class="flex items-center gap-2 min-w-0">
           <span class="truncate text-sm text-right">{{ game.blackPlayer?.username }}</span>
           <div class="relative shrink-0">
-            <UAvatar :src="game.blackPlayer?.avatar || undefined" size="xs" />
+            <UAvatar :src="resolveAvatar(game.blackPlayer?.avatar)" size="xs" />
             <span v-if="game.blackPlayer && isOnline(game.blackPlayer.id)"
               class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-default bg-success" />
           </div>
@@ -64,6 +64,7 @@ import type { Config } from 'chessground/config'
 const route = useRoute()
 const gameId = route.params.id as string
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 const { t } = useI18n()
 const toast = useToast()
 

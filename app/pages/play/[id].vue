@@ -4,13 +4,16 @@
       <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <div class="relative">
-            <UAvatar :src="opponentInfo?.avatar || undefined" size="sm" />
+            <UAvatar :src="resolveAvatar(opponentInfo?.avatar)" size="sm" />
             <span v-if="opponentInfo && isOnline(opponentInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-success" />
-            <span v-else-if="opponentInfo && getStatus(opponentInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-muted" />
+            <span v-else-if="opponentInfo && getStatus(opponentInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-error" />
           </div>
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold lg:text-base">{{ opponentInfo?.username || (isWaiting ? $t('waitingForOpponent') : $t('opponent')) }}</p>
-            <p class="text-xs text-muted lg:text-sm">{{ opponentInfo?.rating || '???' }}</p>
+            <p class="text-xs text-muted lg:text-sm">
+              <span v-if="opponentDisconnected && disconnectCountdown > 0" class="text-warning">{{ disconnectCountdown }}s</span>
+              <span v-else>{{ opponentInfo?.rating || '???' }}</span>
+            </p>
           </div>
         </div>
         <div v-if="!isWaiting" class="font-mono text-xl lg:text-lg" :class="opponentTimeClass" role="timer" :aria-label="`Opponent time: ${formatTime(opponentTime)}`">
@@ -33,9 +36,9 @@
       <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
           <div class="relative">
-            <UAvatar :src="playerInfo?.avatar || undefined" size="sm" />
+            <UAvatar :src="resolveAvatar(playerInfo?.avatar)" size="sm" />
             <span v-if="playerInfo && isOnline(playerInfo.id)" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-success" />
-            <span v-else-if="playerInfo && getStatus(playerInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-muted" />
+            <span v-else-if="playerInfo && getStatus(playerInfo.id)?.online === false" class="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-default bg-error" />
           </div>
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold lg:text-base">{{ playerInfo?.username || $t('you') }}</p>
@@ -116,7 +119,7 @@
           @abort="doAbort"
           @offer-draw="doOfferDraw"
         />
-        <MobileGameTabs
+        <GameMobileGameTabs
           :moves="moves"
           :chat-messages="chatMessages"
           :game-over="gameOver"
@@ -142,6 +145,7 @@ const { t } = useI18n()
 const toast = useToast()
 const showInviteModal = ref(false)
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize, isMobile } = useBoardSize(gameContainer)
@@ -174,11 +178,12 @@ const {
   doAbort,
   doOfferDraw,
   chatMessages,
+  opponentDisconnected,
+  disconnectCountdown,
   sendChatMessage,
   formatTime,
   onBoardCreated,
   onBoardMove,
-  evaluation,
 } = useGameSession(gameId)
 
 watch([playerInfo, opponentInfo], ([p, o]) => {

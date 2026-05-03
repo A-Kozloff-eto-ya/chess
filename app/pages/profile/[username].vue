@@ -3,9 +3,9 @@
     <UCard>
       <div class="flex gap-4">
         <div class="relative flex-shrink-0">
-          <UAvatar :src="profile.avatar || undefined" size="3xl" class="size-20 sm:size-32 md:size-40" />
+          <UAvatar :src="resolveAvatar(profile.avatar)" size="3xl" class="size-20 sm:size-32 md:size-40" />
           <span v-if="isProfileOnline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-success" />
-          <span v-else-if="isProfileOffline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-muted" />
+          <span v-else-if="isProfileOffline" class="absolute bottom-1 right-1 size-4 rounded-full border-2 border-default bg-error" />
         </div>
         <div class="flex flex-col justify-center min-w-0">
           <div class="flex items-center gap-2">
@@ -55,6 +55,34 @@
       </div>
     </UCard>
 
+    <UCard v-if="stats">
+      <template #header>
+        <span class="font-semibold">{{ isOwnProfile ? $t('yourStats') : $t('stats') }}</span>
+      </template>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div class="flex flex-col items-center gap-1 rounded-lg bg-elevated p-3">
+          <span class="text-2xl font-bold text-primary">{{ stats.gamesPlayed }}</span>
+          <span class="text-xs text-muted">{{ $t('gamesPlayed') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-lg bg-elevated p-3">
+          <span class="text-2xl font-bold text-success">{{ stats.wins }}</span>
+          <span class="text-xs text-muted">{{ $t('wins') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-lg bg-elevated p-3">
+          <span class="text-2xl font-bold text-error">{{ stats.losses }}</span>
+          <span class="text-xs text-muted">{{ $t('losses') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-lg bg-elevated p-3">
+          <span class="text-2xl font-bold text-warning">{{ stats.draws }}</span>
+          <span class="text-xs text-muted">{{ $t('draws') }}</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 rounded-lg bg-elevated p-3 col-span-2 sm:col-span-1">
+          <span class="text-2xl font-bold text-primary">{{ stats.winRate }}%</span>
+          <span class="text-xs text-muted">{{ $t('winRate') }}</span>
+        </div>
+      </div>
+    </UCard>
+
     <UCard v-if="editing">
       <div class="flex flex-col gap-4">
         <UFormField :label="$t('username')">
@@ -65,7 +93,7 @@
         </UFormField>
         <UFormField :label="$t('avatar')">
           <div class="flex items-center gap-4">
-            <UAvatar :src="editForm.avatar || undefined" size="xl" />
+            <UAvatar :src="resolveAvatar(editForm.avatar)" size="xl" />
             <UButton :label="$t('uploadPhoto')" icon="i-lucide-upload" variant="outline" size="sm" :loading="uploading" @click="avatarInput?.click()" />
             <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" @change="onAvatarUpload" />
           </div>
@@ -118,6 +146,7 @@ const route = useRoute()
 const username = route.params.username as string
 const { loggedIn, user } = useUserSession()
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
+const { resolveAvatar } = useAvatar()
 const { t, locale } = useI18n()
 const toast = useToast()
 const { onFriendshipChange } = useNotifications()
@@ -143,6 +172,7 @@ interface ProfileGame {
 
 const profile = ref<ProfileUser | null>(null)
 const games = ref<ProfileGame[]>([])
+const stats = ref<{ gamesPlayed: number; wins: number; losses: number; draws: number; winRate: number } | null>(null)
 const addingFriend = ref(false)
 const removingFriend = ref(false)
 const cancellingRequest = ref(false)
@@ -371,11 +401,19 @@ const getResultClass = (game: ProfileGame) => {
   }
 }
 
+const fetchStats = async () => {
+  if (!profile.value) return
+  try {
+    stats.value = await $fetch(`/api/users/stats/${profile.value.id}`)
+  } catch {
+    stats.value = null
+  }
+}
+
 onMounted(async () => {
   await fetchProfile()
   if (profile.value) {
-    await fetchGames()
-    await fetchOnlineStatus([profile.value.id])
+    await Promise.all([fetchGames(), fetchStats(), fetchOnlineStatus([profile.value.id])])
   }
   await checkFriendship()
 })

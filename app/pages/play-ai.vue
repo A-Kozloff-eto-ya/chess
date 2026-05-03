@@ -29,8 +29,8 @@
 
       <div class="flex w-full items-center justify-between px-2 lg:px-0" :style="{ maxWidth: boardSize + 'px' }">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-user" class="size-5 text-success" />
-          <span class="text-sm font-semibold lg:text-base">{{ $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
+          <UAvatar :src="resolveAvatar(user?.avatar)" size="sm" />
+          <span class="text-sm font-semibold lg:text-base">{{ user?.username || $t('youColor', { color: playerColor === 'white' ? $t('white') : $t('black') }) }}</span>
         </div>
         <div class="font-mono text-xl lg:text-lg" role="timer" :aria-label="`Your time: ${formatTime(myTime)}`">{{ formatTime(myTime) }}</div>
       </div>
@@ -73,6 +73,8 @@ const DEFAULT_TC = parseTimeControl('10+0')
 const { t } = useI18n()
 const sounds = useSounds()
 
+const { user } = useUserSession()
+const { resolveAvatar } = useAvatar()
 const route = useRoute()
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer)
@@ -92,26 +94,6 @@ const gameOverReason = ref('')
 const boardKey = ref(0)
 const isAiThinking = ref(false)
 const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
-const evaluation = ref<{ type: 'cp' | 'mate'; value: number } | null>(null)
-
-const fetchEvaluation = async () => {
-  if (!boardApi.value || gameOver.value) return
-  const history = boardApi.value.getHistory()
-  if (history.length === 0) {
-    evaluation.value = null
-    return
-  }
-  try {
-    const sanMovesStr = history.join(' ')
-    const result = await $fetch<{ eval: { type: 'cp' | 'mate'; value: number } | null }>('/api/engine/eval', {
-      method: 'POST',
-      body: { sanMoves: sanMovesStr, movetime: 500 },
-    })
-    evaluation.value = result.eval ? { type: result.eval.type, value: result.eval.value } : null
-  } catch {
-    evaluation.value = null
-  }
-}
 
 const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
 resetClock(DEFAULT_TC.base)
@@ -155,7 +137,6 @@ const onBoardMove = (move: { from: string; to: string; promotion?: string; san: 
   if (boardApi.value?.getTurnColor() !== (aiColor.value === 'white' ? 'w' : 'b')) return
 
   isAiThinking.value = true
-  fetchEvaluation()
   setTimeout(() => {
     getAiMove()
   }, 300)
@@ -245,15 +226,40 @@ const getAiMove = async () => {
           gameOver.value = true
           gameOverReason.value = 'draw'
           stopTimer()
+        } else {
+          const pm = boardApi.value.tryPlayPremove()
+          if (pm) {
+            moves.value.push(pm.san)
+            if (pm.captured) {
+              sounds.capture()
+            } else {
+              sounds.move()
+            }
+            if (boardApi.value.isCheckmate()) {
+              gameOver.value = true
+              gameOverReason.value = 'checkmate'
+              stopTimer()
+            } else if (boardApi.value.isStalemate()) {
+              gameOver.value = true
+              gameOverReason.value = 'stalemate'
+              stopTimer()
+            } else if (boardApi.value.isDraw()) {
+              gameOver.value = true
+              gameOverReason.value = 'draw'
+              stopTimer()
+            } else {
+              setTimeout(() => getAiMove(), 300)
+              return
+            }
+          }
         }
       }
     }
   } catch (e) {
     console.error('AI move failed:', e)
-  } finally {
-    isAiThinking.value = false
-    fetchEvaluation()
   }
+
+  isAiThinking.value = false
 }
 
 const resetGame = () => {
@@ -264,7 +270,6 @@ const resetGame = () => {
   resetClock(DEFAULT_TC.base)
   isAiThinking.value = false
   boardApi.value = null
-  evaluation.value = null
 }
 </script>
 

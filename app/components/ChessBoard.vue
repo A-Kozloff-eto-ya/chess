@@ -27,6 +27,8 @@ export interface BoardConfig {
   viewOnly?: boolean
   coordinates?: boolean
   premovable?: { enabled?: boolean }
+  movableColor?: 'white' | 'black' | 'both' | undefined
+  movableEnabled?: boolean
 }
 
 type PieceTheme = 'cburnett' | 'tatiana' | 'maestro' | 'pirouetti'
@@ -107,14 +109,18 @@ const getPromotionIcon = (role: Role, color: Color): string => {
 }
 
 const toCgConfig = (config: BoardConfig): Partial<Config> => {
+  const effectiveColor = config.movableColor !== undefined ? config.movableColor : props.playerColor
+  const movableEnabled = config.movableEnabled !== false
+  const isInteractive = effectiveColor !== undefined
   const result: Partial<Config> = {
     orientation: config.orientation,
-    viewOnly: config.viewOnly,
+    viewOnly: !isInteractive,
     coordinates: config.coordinates,
   }
-  if (props.playerColor && !config.viewOnly) {
+  if (isInteractive) {
     result.movable = {
-      color: props.playerColor === 'both' ? 'both' : (props.playerColor as Color),
+      color: effectiveColor === 'both' ? 'both' : (effectiveColor as Color),
+      enabled: movableEnabled,
     }
   }
   if (config.premovable?.enabled !== undefined) {
@@ -205,6 +211,8 @@ defineExpose({
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: var(--ui-radius, 0.5rem);
 }
 
 .chess-board-wrap .cg-wrap {

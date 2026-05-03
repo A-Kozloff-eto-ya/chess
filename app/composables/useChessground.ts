@@ -24,6 +24,8 @@ export function useChessground(options: UseChessgroundOptions = {}) {
   const chess = ref(new Chess())
   let el: HTMLElement | null = null
   let movableColor: Color | 'both' | undefined
+  let storedPremove: { orig: Key; dest: Key } | null = null
+  let premoveCallback: ((orig: Key, dest: Key) => void) | null = null
 
   const toColor = (c: 'w' | 'b'): Color => c === 'w' ? 'white' : 'black'
 
@@ -38,10 +40,30 @@ export function useChessground(options: UseChessgroundOptions = {}) {
     return dests
   }
 
+  const computePremoveDests = (color: Color): Map<Key, Key[]> => {
+    const fen = chess.value.fen()
+    const parts = fen.split(' ')
+    parts[1] = color === 'white' ? 'w' : 'b'
+    try {
+      const tempChess = new Chess(parts.join(' '))
+      const moves = tempChess.moves({ verbose: true })
+      const dests = new Map<Key, Key[]>()
+      for (const m of moves) {
+        const from = m.from as Key
+        if (!dests.has(from)) dests.set(from, [])
+        dests.get(from)!.push(m.to as Key)
+      }
+      return dests
+    } catch {
+      return new Map()
+    }
+  }
+
   const buildConfig = (base?: Partial<Config>): Config => {
     const turnColor = toColor(chess.value.turn())
     const autoValidate = options.autoValidateMoves !== false
-    const isViewOnly = base?.viewOnly ?? false
+    const isViewOnly = base?.viewOnly === true
+    const hasMovable = base?.movable?.color !== undefined
     movableColor = base?.movable?.color
 
     const config: Config = {
@@ -51,7 +73,7 @@ export function useChessground(options: UseChessgroundOptions = {}) {
       check: chess.value.inCheck() ? turnColor : undefined,
       coordinates: base?.coordinates ?? true,
       autoCastle: true,
-      viewOnly: isViewOnly,
+      viewOnly: isViewOnly && !hasMovable,
       highlight: {
         lastMove: true,
         check: true,
@@ -61,11 +83,11 @@ export function useChessground(options: UseChessgroundOptions = {}) {
         duration: 200,
       },
       draggable: {
-        enabled: true,
+        enabled: !isViewOnly || hasMovable,
         showGhost: true,
       },
       selectable: {
-        enabled: true,
+        enabled: !isViewOnly || hasMovable,
       },
       drawable: {
         enabled: true,
@@ -108,11 +130,18 @@ export function useChessground(options: UseChessgroundOptions = {}) {
       if (base.drawable.onChange) config.drawable!.onChange = base.drawable.onChange
     }
 
-    if (!isViewOnly) {
+    if (!isViewOnly || hasMovable) {
+      const movableEnabled = base?.movable?.enabled !== false
+      const movableColor = base?.movable?.color ?? turnColor
+      const isPlayerTurn = movableColor === turnColor
       config.movable = {
         free: base?.movable?.free ?? !autoValidate,
-        color: base?.movable?.color ?? turnColor,
-        dests: autoValidate ? computeDests() : undefined,
+        color: movableColor,
+        dests: movableEnabled
+          ? (isPlayerTurn
+              ? (autoValidate ? computeDests() : undefined)
+              : computePremoveDests(movableColor))
+          : new Map(),
         showDests: base?.movable?.showDests ?? true,
         rookCastle: true,
         events: {
@@ -132,8 +161,13 @@ export function useChessground(options: UseChessgroundOptions = {}) {
         showDests: base?.premovable?.showDests ?? true,
         castle: true,
         events: {
-          set: base?.premovable?.events?.set,
-          unset: base?.premovable?.events?.unset,
+          set: (orig: Key, dest: Key) => {
+            storedPremove = { orig, dest }
+            premoveCallback?.(orig, dest)
+          },
+          unset: () => {
+            storedPremove = null
+          },
         },
       }
       if (base?.premovable?.castle !== undefined) config.premovable.castle = base.premovable.castle
@@ -220,12 +254,17 @@ export function useChessground(options: UseChessgroundOptions = {}) {
   const updateBoardState = () => {
     if (!cg.value) return
     const turnColor = toColor(chess.value.turn())
+    const effectiveColor = movableColor && movableColor !== 'both' ? movableColor : turnColor
+    const isPlayerTurn = effectiveColor === turnColor
+    const autoValidate = options.autoValidateMoves !== false
     const newConfig: Partial<Config> = {
       fen: chess.value.fen(),
       turnColor,
       movable: {
-        color: movableColor && movableColor !== 'both' ? movableColor : turnColor,
-        dests: options.autoValidateMoves !== false ? computeDests() : undefined,
+        color: effectiveColor,
+        dests: autoValidate
+          ? (isPlayerTurn ? computeDests() : computePremoveDests(effectiveColor))
+          : undefined,
       },
     }
     if (chess.value.inCheck()) {
@@ -343,6 +382,58 @@ export function useChessground(options: UseChessgroundOptions = {}) {
 
   onUnmounted(destroy)
 
+  let preservedPremove: { orig: Key; dest: Key } | null = null
+
+  const preservePremove = () => {
+    if (storedPremove) {
+      preservedPremove = { ...storedPremove }
+    }
+  }
+
+  const consumePremove = (): { from: string; to: string } | null => {
+    const pm = storedPremove ?? preservedPremove
+    storedPremove = null
+    preservedPremove = null
+    return pm ? { from: pm.orig, to: pm.dest } : null
+  }
+
+  const setPremoveCallback = (cb: (orig: Key, dest: Key) => void) => {
+    premoveCallback = cb
+  }
+
+  const tryPlayPremove = (): { from: string; to: string; promotion?: string; san: string; captured?: string } | null => {
+    const pm = storedPremove ?? preservedPremove
+    storedPremove = null
+    preservedPremove = null
+    if (!pm || !cg.value) return null
+
+    const orig = pm.orig
+    const dest = pm.dest
+
+    const piece = chess.value.get(orig as any)
+    let promotion: string | undefined
+    if (piece?.type === 'p') {
+      if ((piece.color === 'w' && dest[1] === '8') || (piece.color === 'b' && dest[1] === '1')) {
+        promotion = 'q'
+      }
+    }
+
+    try {
+      const moveResult = chess.value.move({ from: orig as any, to: dest as any, promotion: promotion as any })
+      if (moveResult) {
+        updateBoardState()
+        return {
+          from: orig,
+          to: dest,
+          promotion,
+          san: moveResult.san,
+          captured: moveResult.captured,
+        }
+      }
+    } catch {}
+    return null
+  }
+
   return {
     cg,
     chess,
@@ -357,6 +448,10 @@ export function useChessground(options: UseChessgroundOptions = {}) {
     promote,
     cancelPromotion,
     isPawnPromotion,
+    consumePremove,
+    preservePremove,
+    setPremoveCallback,
+    tryPlayPremove,
     getHistory: () => chess.value.history(),
     getHistoryVerbose: () => chess.value.history({ verbose: true }),
     getFen: () => chess.value.fen(),

@@ -132,6 +132,7 @@ export type ServerMessage =
   | { type: 'move_rejected'; reason: string; fen: string }
   | { type: 'game_over'; gameId: string; result: string; reason: string }
   | { type: 'draw_offered'; by: string }
+  | { type: 'draw_declined' }
   | { type: 'rematch_offered'; by: string }
   | { type: 'rematch_accepted'; gameId: string; newGameId: string }
   | { type: 'rematch_declined' }
