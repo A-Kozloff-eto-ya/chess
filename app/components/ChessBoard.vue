@@ -21,6 +21,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Config } from 'chessground/config'
 import type { Key, Role, Color } from 'chessground/types'
 import { useChessground, type ChessgroundCallbacks } from '~/composables/useChessground'
+import type { PieceTheme, BoardTheme } from '~/composables/useSettings'
 
 export interface BoardConfig {
   orientation?: 'white' | 'black'
@@ -30,9 +31,6 @@ export interface BoardConfig {
   movableColor?: 'white' | 'black' | 'both' | undefined
   movableEnabled?: boolean
 }
-
-type PieceTheme = 'cburnett' | 'tatiana' | 'maestro' | 'pirouetti'
-type BoardTheme = 'brown' | 'blue' | 'green' | 'purple' | 'ic'
 
 const props = withDefaults(defineProps<{
   boardConfig?: BoardConfig

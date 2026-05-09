@@ -94,7 +94,7 @@
           />
           <div class="flex-1 min-w-0 min-h-0">
             <ClientOnly>
-              <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
+              <ChessBoard :board-config="boardConfig" :board-theme="settings.boardTheme" :piece-theme="settings.pieceTheme" @board-created="onBoardCreated" />
             </ClientOnly>
           </div>
         </div>
@@ -119,7 +119,7 @@
           <UButton icon="i-lucide-chevron-left" variant="ghost" size="sm" aria-label="Previous move" @click="goPrev" />
           <UButton icon="i-lucide-chevron-right" variant="ghost" size="sm" aria-label="Next move" @click="goNext" />
           <UButton icon="i-lucide-skip-forward" variant="ghost" size="sm" aria-label="Last move" @click="goLast" />
-          <UButton v-if="!analysis && analysisStatus === 'idle' && loadedGame" :label="$t('analyze')" icon="i-lucide-brain" variant="outline" size="sm" @click="startEngineAnalysis" />
+          <UButton v-if="!analysis && analysisStatus === 'idle' && loadedGame" :label="$t('analyze')" icon="i-lucide-brain" variant="outline" size="sm" @click="triggerAnalysis" />
         </div>
       </div>
 
@@ -174,12 +174,14 @@
 
 <script setup lang="ts">
 import { Chess } from 'chess.js'
-import type { AnalyzedMove } from '~/types'
 import type { DrawShape } from 'chessground/draw'
 import { createMoveBadge } from '~/composables/useMoveBadge'
+import { pieceIcon, qualityBadge, formatEval, parseSanMove, getAttackedSquares } from '~/utils/chess-ui'
 
 const { parsePgn } = usePgn()
 const { t } = useI18n()
+const { settings } = useSettings()
+const { analysisStatus, progress, analysis, startEngineAnalysis, resetAnalysis } = useEngineAnalysis()
 
 const pgnText = ref('')
 const fenText = ref('')
@@ -197,9 +199,6 @@ const positions = ref<string[]>([])
 const sanMoves = ref<string[]>([])
 const movesList = ref<{ from: string; to: string; promotion?: string; san: string }[]>([])
 const currentMoveIndex = ref(0)
-const analysisStatus = ref<'idle' | 'analyzing' | 'completed' | 'failed'>('idle')
-const progress = ref(0)
-const analysis = ref<{ analyzedMoves: AnalyzedMove[]; evaluations: number[]; accuracy: { white: number; black: number } } | null>(null)
 
 const currentEval = computed(() => {
   if (!analysis.value?.evaluations) return 0
@@ -225,48 +224,11 @@ const evalForBar = computed(() => {
   return { type: 'cp' as const, value: ev }
 })
 
-const formatEval = (cp: number) => {
-  if (Math.abs(cp) >= 90000) {
-    return cp > 0 ? `+M${Math.round((100000 - cp) / 100)}` : `-M${Math.round((cp + 100000) / 100)}`
-  }
-  return (cp > 0 ? '+' : '') + (cp / 100).toFixed(1)
-}
-
-const qualityBadge = (quality: string) => {
-  switch (quality) {
-    case 'brilliant': return 'bg-emerald-500/20 text-emerald-400'
-    case 'best': return 'bg-success/20 text-success'
-    case 'good': return 'bg-sky-500/20 text-sky-400'
-    case 'inaccuracy': return 'bg-amber-500/20 text-amber-400'
-    case 'mistake': return 'bg-orange-500/20 text-orange-400'
-    case 'blunder': return 'bg-error/20 text-error'
-    default: return 'bg-accented text-default'
-  }
-}
-
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer, 160, 36)
 
 const currentFen = computed(() => positions.value[currentMoveIndex.value] ?? '')
 const captured = useCapturedPieces(currentFen)
-
-function parseSanMove(fen: string, san: string): { from: string; to: string } | null {
-  try {
-    const c = new Chess(fen)
-    const m = c.move(san)
-    if (m) return { from: m.from, to: m.to }
-  } catch {}
-  return null
-}
-
-function getAttackedSquares(fen: string): string[] {
-  try {
-    const c = new Chess(fen)
-    const moves = c.moves({ verbose: true })
-    return [...new Set(moves.filter(m => m.captured).map(m => m.to))]
-  } catch {}
-  return []
-}
 
 const buildPositions = (moves: { from: string; to: string; promotion?: string; san: string }[]) => {
   const chess = new Chess()
@@ -334,9 +296,7 @@ const goLast = () => goToMove(positions.value.length - 1)
 
 const loadPgn = () => {
   errorMessage.value = ''
-  analysis.value = null
-  analysisStatus.value = 'idle'
-  progress.value = 0
+  resetAnalysis()
 
   const result = parsePgn(pgnText.value)
   if (!result) {
@@ -353,9 +313,7 @@ const loadPgn = () => {
 
 const loadFen = () => {
   errorMessage.value = ''
-  analysis.value = null
-  analysisStatus.value = 'idle'
-  progress.value = 0
+  resetAnalysis()
 
   try {
     const chess = new Chess()
@@ -380,111 +338,13 @@ const loadFen = () => {
   }
 }
 
-const startEngineAnalysis = async () => {
+const triggerAnalysis = () => {
   if (!loadedGame.value?.moves?.length) return
-
-  analysisStatus.value = 'analyzing'
-  progress.value = 0
-  analysis.value = null
-
-  const moves = loadedGame.value.moves
-  const totalSteps = moves.length + 1
-  let completed = 0
-
-  try {
-    const chess = new Chess()
-    const fens: string[] = [chess.fen()]
-    for (const m of moves) {
-      chess.move({ from: m.from, to: m.to, promotion: m.promotion })
-      fens.push(chess.fen())
-    }
-
-    const evals: number[] = []
-
-    for (let i = 0; i <= moves.length; i++) {
-      const sanMovesStr = i === 0 ? '' : moves.slice(0, i).map(m => m.san).join(' ')
-      try {
-        const result = await $fetch<{ eval: { type: 'cp' | 'mate'; value: number } | null }>('/api/engine/eval', {
-          method: 'POST',
-          body: { sanMoves: sanMovesStr || undefined, movetime: 500 },
-        })
-        let evalCp = 0
-        if (result.eval) {
-          if (result.eval.type === 'mate') {
-            evalCp = result.eval.value > 0 ? 100000 - result.eval.value * 100 : -(100000 - Math.abs(result.eval.value) * 100)
-          } else {
-            evalCp = result.eval.value
-          }
-        }
-        if (i % 2 === 1) evalCp = -evalCp
-        evals.push(evalCp)
-      } catch {
-        evals.push(0)
-      }
-
-      completed++
-      progress.value = Math.round((completed / totalSteps) * 100)
-    }
-
-    const analyzedMoves: AnalyzedMove[] = []
-    const whiteAccuracies: number[] = []
-    const blackAccuracies: number[] = []
-
-    const winningChances = (cp: number) => 2 / (1 + Math.exp(-0.00368208 * cp)) - 1
-    const wcLossToAccuracy = (wcLoss: number) => Math.min(100, Math.max(0, 103.1668 * Math.exp(-0.04354 * wcLoss * 100) - 3.1668))
-    const DECISIVE = 10000
-
-    for (let i = 0; i < moves.length; i++) {
-      const isWhite = i % 2 === 0
-      const evalBefore = evals[i]!
-      const evalAfter = evals[i + 1]!
-
-      const wcBefore = winningChances(evalBefore)
-      const wcAfter = winningChances(evalAfter)
-      const wcLoss = isWhite
-        ? Math.max(0, wcBefore - wcAfter)
-        : Math.max(0, wcAfter - wcBefore)
-
-      if (Math.abs(evalBefore) < DECISIVE) {
-        const acc = wcLossToAccuracy(wcLoss)
-        if (isWhite) whiteAccuracies.push(acc)
-        else blackAccuracies.push(acc)
-      }
-
-      const quality: AnalyzedMove['quality'] = wcLoss < 0.02
-        ? (Math.abs(evalBefore) < DECISIVE && evalBefore * evalAfter < 0 && wcLoss < 0.01 ? 'brilliant' : 'best')
-        : wcLoss < 0.1 ? 'good'
-        : wcLoss < 0.2 ? 'inaccuracy'
-        : wcLoss < 0.3 ? 'mistake'
-        : 'blunder'
-
-      analyzedMoves.push({
-        san: moves[i]!.san,
-        from: moves[i]!.from,
-        to: moves[i]!.to,
-        fen: fens[i + 1]!,
-        evalBefore,
-        evalAfter,
-        quality,
-        bestMove: '',
-        bestPv: [],
-      })
-    }
-
-    const accuracy = {
-      white: whiteAccuracies.length > 0 ? Math.round(whiteAccuracies.reduce((a, b) => a + b, 0) / whiteAccuracies.length * 10) / 10 : 100,
-      black: blackAccuracies.length > 0 ? Math.round(blackAccuracies.reduce((a, b) => a + b, 0) / blackAccuracies.length * 10) / 10 : 100,
-    }
-
-    analysis.value = { analyzedMoves, evaluations: evals, accuracy }
-    analysisStatus.value = 'completed'
-  } catch {
-    analysisStatus.value = 'failed'
-  }
+  startEngineAnalysis(loadedGame.value.moves)
 }
 
 const retryAnalysis = () => {
-  startEngineAnalysis()
+  triggerAnalysis()
 }
 
 const onDrop = (event: DragEvent) => {
@@ -513,20 +373,7 @@ watch(currentMoveIndex, () => {
   showPosition(currentMoveIndex.value)
 })
 
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNext() }
-  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goPrev() }
-  else if (e.key === 'Home') { e.preventDefault(); goFirst() }
-  else if (e.key === 'End') { e.preventDefault(); goLast() }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
-})
+useBoardNavigation({ goNext, goPrev, goFirst, goLast })
 </script>
 
 <style scoped>

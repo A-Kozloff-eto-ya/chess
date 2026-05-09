@@ -50,7 +50,8 @@ export default defineNuxtConfig({
       maxAge: 60 * 60 * 24 * 7,
       password: process.env.NUXT_SESSION_PASSWORD ?? '',
       cookie: {
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
       },
     },
     oauth: {
@@ -58,6 +59,7 @@ export default defineNuxtConfig({
         clientId: process.env.NUXT_OAUTH_GITHUB_CLIENT_ID || '',
         clientSecret: process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET || '',
         redirectURL: process.env.NUXT_OAUTH_GITHUB_REDIRECT_URL || '',
+        emailScope: 'user:email',
       },
       google: {
         clientId: process.env.NUXT_OAUTH_GOOGLE_CLIENT_ID || '',

@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UserInfo, FriendsResponse, FetchError } from '~/../shared/types'
+import type { UserInfo, FriendsResponse } from '~/../shared/types'
 
 const props = defineProps<{ open: boolean; gameId: string; inviteCode: string }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -85,22 +85,17 @@ const copyCode = () => {
   toast.add({ title: t('codeCopied'), color: 'success' })
 }
 
+const { joinByCode: joinByCodeFn } = useGameJoin()
+
 const joinByCode = async () => {
   if (searchCode.value.length !== 6) return
   joining.value = true
-  try {
-    const { gameId } = await $fetch<{ gameId: string }>('/api/games/join', {
-      method: 'POST',
-      body: { inviteCode: searchCode.value.toUpperCase() },
-    })
+  const gameId = await joinByCodeFn(searchCode.value)
+  if (gameId) {
     open.value = false
     navigateTo(`/play/${gameId}`)
-  } catch (e) {
-    const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || t('failedToJoin'), color: 'error' })
-  } finally {
-    joining.value = false
   }
+  joining.value = false
 }
 
 const inviteFriend = async (friend: UserInfo) => {

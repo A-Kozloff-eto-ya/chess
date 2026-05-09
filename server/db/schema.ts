@@ -15,8 +15,12 @@ export const users = pgTable('users', {
   provider: text().default('email'),
   providerId: text(),
   emailVerified: text('emailVerified').default('false'),
+  pendingEmail: text('pendingEmail'),
+  emailChangeToken: text('emailChangeToken'),
+  emailChangeExpires: timestamp('emailChangeExpires'),
   lastSeenAt: timestamp('lastSeenAt'),
   settings: jsonb().default({}),
+  usernameChangedAt: timestamp('usernameChangedAt'),
   createdAt: timestamp().notNull().defaultNow(),
 })
 
@@ -83,6 +87,19 @@ export const emailVerifications = pgTable('email_verifications', {
   createdAt: timestamp().notNull().defaultNow(),
 })
 
+export const userOauthAccounts = pgTable('user_oauth_accounts', {
+  id: serial().primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  provider: text().notNull(),
+  providerId: text().notNull(),
+  username: text(),
+  profileUrl: text(),
+  visible: integer('visible', { mode: 'boolean' }).notNull().default(true),
+  createdAt: timestamp().notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex('oauth_provider_unique').on(table.provider, table.providerId),
+])
+
 export const usersRelations = relations(users, ({ many }) => ({
   gamesAsWhite: many(games, { relationName: 'whitePlayer' }),
   gamesAsBlack: many(games, { relationName: 'blackPlayer' }),
@@ -90,6 +107,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   friendshipsReceived: many(friendships, { relationName: 'addressee' }),
   passwordResets: many(passwordResets),
   chatMessages: many(chatMessages),
+  oauthAccounts: many(userOauthAccounts),
 }))
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -110,4 +128,8 @@ export const friendshipsRelations = relations(friendships, ({ one }) => ({
 
 export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
   user: one(users, { fields: [passwordResets.userId], references: [users.id] }),
+}))
+
+export const userOauthAccountsRelations = relations(userOauthAccounts, ({ one }) => ({
+  user: one(users, { fields: [userOauthAccounts.userId], references: [users.id] }),
 }))

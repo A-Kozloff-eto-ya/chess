@@ -90,21 +90,14 @@ export function useAnalysis(gameId: string) {
   const goFirst = () => goToMove(0)
   const goLast = () => goToMove(positions.value.length - 1)
 
-  const handleKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNext() }
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goPrev() }
-    else if (e.key === 'Home') { e.preventDefault(); goFirst() }
-    else if (e.key === 'End') { e.preventDefault(); goLast() }
-  }
+  useBoardNavigation({ goNext, goPrev, goFirst, goLast })
 
   onMounted(() => {
     startAnalysis()
-    window.addEventListener('keydown', handleKeydown)
   })
 
   onUnmounted(() => {
     stopPolling()
-    window.removeEventListener('keydown', handleKeydown)
   })
 
   return {

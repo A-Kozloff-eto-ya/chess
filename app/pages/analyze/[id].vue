@@ -42,7 +42,7 @@
           <GameEvaluationBar :evaluation="evalForBar" :compact="boardSize < 360" />
           <div class="flex-1 min-w-0 min-h-0">
             <ClientOnly>
-              <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
+              <ChessBoard :board-config="boardConfig" :board-theme="settings.boardTheme" :piece-theme="settings.pieceTheme" @board-created="onBoardCreated" />
             </ClientOnly>
           </div>
         </div>
@@ -122,20 +122,15 @@
 <script setup lang="ts">
 import { Chess } from 'chess.js'
 import type { DrawShape } from 'chessground/draw'
+import type { GameDetail } from '~/types'
 import { createMoveBadge } from '~/composables/useMoveBadge'
+import { pieceIcon, qualityBadge, formatEval, parseSanMove, getAttackedSquares } from '~/utils/chess-ui'
 
 definePageMeta({ layout: 'game' })
 
 const route = useRoute()
 const gameId = route.params.id as string
-
-interface GameDetail {
-  id: number
-  whitePlayer?: { id: number; username: string; rating: number; avatar: string | null }
-  blackPlayer?: { id: number; username: string; rating: number; avatar: string | null }
-  result: string | null
-  moves: { from: string; to: string; san: string }[]
-}
+const { settings } = useSettings()
 
 const game = ref<GameDetail | null>(null)
 const boardApi = ref<ReturnType<typeof useChessground> | null>(null)
@@ -161,43 +156,6 @@ const evalForBar = computed(() => {
   }
   return { type: 'cp' as const, value: ev }
 })
-
-const formatEval = (cp: number) => {
-  if (Math.abs(cp) >= 90000) {
-    return cp > 0 ? `+M${Math.round((100000 - cp) / 100)}` : `-M${Math.round((cp + 100000) / 100)}`
-  }
-  return (cp > 0 ? '+' : '') + (cp / 100).toFixed(1)
-}
-
-const qualityBadge = (quality: string) => {
-  switch (quality) {
-    case 'brilliant': return 'bg-emerald-500/20 text-emerald-400'
-    case 'best': return 'bg-success/20 text-success'
-    case 'good': return 'bg-sky-500/20 text-sky-400'
-    case 'inaccuracy': return 'bg-amber-500/20 text-amber-400'
-    case 'mistake': return 'bg-orange-500/20 text-orange-400'
-    case 'blunder': return 'bg-error/20 text-error'
-    default: return 'bg-accented text-default'
-  }
-}
-
-function parseSanMove(fen: string, san: string): { from: string; to: string } | null {
-  try {
-    const c = new Chess(fen)
-    const m = c.move(san)
-    if (m) return { from: m.from, to: m.to }
-  } catch {}
-  return null
-}
-
-function getAttackedSquares(fen: string): string[] {
-  try {
-    const c = new Chess(fen)
-    const moves = c.moves({ verbose: true })
-    return [...new Set(moves.filter(m => m.captured).map(m => m.to))]
-  } catch {}
-  return []
-}
 
 const onBoardCreated = (api: ReturnType<typeof useChessground>) => {
   boardApi.value = api

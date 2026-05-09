@@ -1,6 +1,6 @@
-import { Chess } from 'chess.js'
 import { z } from 'zod'
 import { submitEvalToPool } from '../../utils/stockfishPool'
+import { sanToUciMoves } from '../../utils/chess'
 
 const evalSchema = z.object({
   sanMoves: z.string().min(1).optional(),
@@ -21,20 +21,11 @@ export default defineEventHandler(async (event) => {
 
   let positionCmd = 'position startpos'
   if (sanMoves) {
-    try {
-      const chess = new Chess()
-      const moveList = sanMoves.split(' ').filter(Boolean)
-      const uciList: string[] = []
-      for (const san of moveList) {
-        const move = chess.move(san)
-        uciList.push(move.from + move.to + (move.promotion || ''))
-      }
-      if (uciList.length > 0) {
-        positionCmd = `position startpos moves ${uciList.join(' ')}`
-      }
-    } catch {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid SAN moves' })
+    const result = sanToUciMoves(sanMoves)
+    if (result.error) {
+      throw createError({ statusCode: 400, statusMessage: result.error })
     }
+    positionCmd = result.positionCmd
   } else if (uciMoves) {
     positionCmd = `position startpos moves ${uciMoves}`
   }

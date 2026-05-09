@@ -17,7 +17,7 @@
 
       <div class="board-area w-full" :style="{ maxWidth: boardSize + 'px', height: boardSize + 'px' }">
         <ClientOnly>
-          <ChessBoard :board-config="boardConfig" @board-created="onBoardCreated" />
+          <ChessBoard :board-config="boardConfig" :board-theme="settings.boardTheme" :piece-theme="settings.pieceTheme" @board-created="onBoardCreated" />
         </ClientOnly>
       </div>
 
@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import { Chess } from 'chess.js'
 import type { Config } from 'chessground/config'
+import type { GameDetail, GameMove } from '~/types'
 
 definePageMeta({ layout: 'game' })
 
@@ -90,25 +91,10 @@ const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 const { resolveAvatar } = useAvatar()
 const { t } = useI18n()
 const toast = useToast()
+const { settings } = useSettings()
 
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize } = useBoardSize(gameContainer)
-
-interface GameMove {
-  from: string
-  to: string
-  promotion?: string
-  san: string
-}
-
-interface GameDetail {
-  id: number
-  pgn: string | null
-  moves: GameMove[]
-  result: string | null
-  whitePlayer?: { id: number; username: string; rating: number; avatar: string | null }
-  blackPlayer?: { id: number; username: string; rating: number; avatar: string | null }
-}
 
 const game = ref<GameDetail | null>(null)
 const moves = ref<string[]>([])

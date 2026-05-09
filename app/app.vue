@@ -5,6 +5,10 @@ useSettings()
 
 useHead({
   style,
+  link: [
+    { rel: 'stylesheet', href: '/css/boards/brown.css', id: 'chess-board-theme' },
+    { rel: 'stylesheet', href: '/css/pieces/cburnett.css', id: 'chess-piece-theme' },
+  ],
   script: [
     {
       innerHTML: `

@@ -11,10 +11,10 @@ setInterval(() => {
 
 function getIP(event: { node: { req: { headers: Record<string, string | string[] | undefined>; socket?: { remoteAddress?: string } } } }): string {
   const forwarded = event.node.req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string') {
+  if (typeof forwarded === 'string' && process.env.TRUST_PROXY === 'true') {
     return (forwarded.split(',')[0] ?? '').trim()
   }
-  if (Array.isArray(forwarded) && forwarded.length > 0) {
+  if (Array.isArray(forwarded) && forwarded.length > 0 && process.env.TRUST_PROXY === 'true') {
     return (forwarded[0]!.split(',')[0] ?? '').trim()
   }
   return event.node.req.socket?.remoteAddress || 'unknown'
@@ -36,6 +36,7 @@ function isRateLimited(key: string, limit: number, windowMs: number): boolean {
 const RULES: { pattern: RegExp; limit: number; windowMs: number }[] = [
   { pattern: /^POST \/api\/auth\/login/, limit: 5, windowMs: 60_000 },
   { pattern: /^POST \/api\/auth\/register/, limit: 5, windowMs: 60_000 },
+  { pattern: /^POST \/api\/auth\/forgot-password/, limit: 3, windowMs: 60_000 },
   { pattern: /^POST \/api\/engine\/bestmove/, limit: 100, windowMs: 60_000 },
   { pattern: /^POST \/api\/games\/?$/, limit: 20, windowMs: 60_000 },
   { pattern: /^POST \/api\/games\/join/, limit: 20, windowMs: 60_000 },

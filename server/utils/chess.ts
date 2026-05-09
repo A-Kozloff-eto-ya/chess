@@ -42,3 +42,21 @@ export function getFenAfterMoves(moves: string[], startingFen?: string): string 
   }
   return chess.fen()
 }
+
+export function sanToUciMoves(sanMoves: string): { positionCmd: string; error?: string } {
+  const chess = new Chess()
+  const moveList = sanMoves.split(' ').filter(Boolean)
+  const uciList: string[] = []
+  for (const san of moveList) {
+    try {
+      const move = chess.move(san)
+      uciList.push(move.from + move.to + (move.promotion || ''))
+    } catch {
+      return { positionCmd: 'position startpos', error: 'Invalid SAN moves' }
+    }
+  }
+  if (uciList.length > 0) {
+    return { positionCmd: `position startpos moves ${uciList.join(' ')}` }
+  }
+  return { positionCmd: 'position startpos' }
+}

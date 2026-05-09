@@ -80,6 +80,15 @@ export interface GameMove {
   san: string
 }
 
+export interface GameDetail {
+  id: number
+  pgn?: string | null
+  moves: GameMove[]
+  result: string | null
+  whitePlayer?: { id: number; username: string; rating: number; avatar: string | null }
+  blackPlayer?: { id: number; username: string; rating: number; avatar: string | null }
+}
+
 export interface FetchError {
   data?: { statusMessage?: string }
   message?: string

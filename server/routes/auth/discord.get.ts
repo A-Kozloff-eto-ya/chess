@@ -1,5 +1,4 @@
-import { users } from '../../db/schema'
-import { eq } from 'drizzle-orm'
+import { resolveOAuthUser } from '../../utils/oauth'
 
 export default defineOAuthDiscordEventHandler({
   config: {
@@ -7,33 +6,17 @@ export default defineOAuthDiscordEventHandler({
     scope: ['identify', 'email'],
   },
   async onSuccess(event, { user }) {
-    let existingUser = await db.select().from(users).where(eq(users.providerId, String(user.id))).then(r => r[0])
-
-    if (!existingUser) {
-      const avatarHash = user.avatar
-      const avatar = avatarHash
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarHash}.png`
-        : null
-      existingUser = await db.insert(users).values({
-        username: user.global_name || user.username || `discord_${user.id}`,
-        email: user.email || `${user.username}@discord.com`,
-        avatar,
-        provider: 'discord',
-        providerId: String(user.id),
-      }).returning().then(r => r[0])
-    }
-
-    await setUserSession(event, {
-      user: {
-        id: existingUser.id,
-        username: existingUser.username,
-        email: existingUser.email,
-        avatar: existingUser.avatar,
-        rating: existingUser.rating,
-      },
+    const avatarHash = user.avatar
+    const avatar = avatarHash
+      ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarHash}.png`
+      : null
+    return resolveOAuthUser(event, {
+      provider: 'discord',
+      providerId: String(user.id),
+      username: user.global_name || user.username || `discord_${user.id}`,
+      email: user.email || `${user.username}@discord.com`,
+      avatar,
     })
-
-    return sendRedirect(event, '/')
   },
   onError(event, error) {
     console.error('Discord OAuth error:', error)

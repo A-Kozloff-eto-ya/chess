@@ -31,11 +31,9 @@ function classifyMove(cpLoss: number, evalBefore?: number, evalAfter?: number, i
   return 'blunder'
 }
 
-function calculateAccuracy(cpLosses: number[]): number {
-  if (cpLosses.length === 0) return 100
-  const avg = cpLosses.reduce((a, b) => a + b, 0) / cpLosses.length
-  return Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * avg) - 3.1668))
-}
+const winningChances = (cp: number) => 2 / (1 + Math.exp(-0.00368208 * cp)) - 1
+const wcLossToAccuracy = (wcLoss: number) => Math.min(100, Math.max(0, 103.1668 * Math.exp(-0.04354 * wcLoss * 100) - 3.1668))
+const DECISIVE = 10000
 
 function uciToSan(chess: Chess, uci: string): string {
   try {
@@ -134,13 +132,13 @@ export async function runAnalysis(gameId: number) {
     }
 
     const analyzedMoves: AnalyzedMove[] = []
-    const whiteLosses: number[] = []
-    const blackLosses: number[] = []
+    const whiteAccuracies: number[] = []
+    const blackAccuracies: number[] = []
 
     for (let i = 0; i < moveList.length; i++) {
       const isWhite = i % 2 === 0
-      const evalBefore = evals[i]
-      const evalAfter = evals[i + 1]
+      const evalBefore = evals[i]!
+      const evalAfter = evals[i + 1]!
 
       let cpLoss: number
       if (isWhite) {
@@ -150,17 +148,25 @@ export async function runAnalysis(gameId: number) {
       }
       cpLoss = Math.min(cpLoss, 2000)
 
-      if (isWhite) whiteLosses.push(cpLoss)
-      else blackLosses.push(cpLoss)
+      if (Math.abs(evalBefore) < DECISIVE) {
+        const wcBefore = winningChances(evalBefore)
+        const wcAfter = winningChances(evalAfter)
+        const wcLoss = isWhite
+          ? Math.max(0, wcBefore - wcAfter)
+          : Math.max(0, wcAfter - wcBefore)
+        const acc = wcLossToAccuracy(wcLoss)
+        if (isWhite) whiteAccuracies.push(acc)
+        else blackAccuracies.push(acc)
+      }
 
-      const posChess = new Chess(fens[i])
-      const bestSan = bestMovesUci[i] ? uciToSan(posChess, bestMovesUci[i]) : ''
+      const posChess = new Chess(fens[i]!)
+      const bestSan = bestMovesUci[i] ? uciToSan(posChess, bestMovesUci[i]!) : ''
 
       analyzedMoves.push({
-        san: moveList[i].san,
-        from: moveList[i].from,
-        to: moveList[i].to,
-        fen: fens[i + 1],
+        san: moveList[i]!.san,
+        from: moveList[i]!.from,
+        to: moveList[i]!.to,
+        fen: fens[i + 1]!,
         evalBefore,
         evalAfter,
         quality: classifyMove(cpLoss, evalBefore, evalAfter, isWhite),
@@ -170,8 +176,8 @@ export async function runAnalysis(gameId: number) {
     }
 
     const accuracy = {
-      white: Math.round(calculateAccuracy(whiteLosses) * 10) / 10,
-      black: Math.round(calculateAccuracy(blackLosses) * 10) / 10,
+      white: whiteAccuracies.length > 0 ? Math.round(whiteAccuracies.reduce((a, b) => a + b, 0) / whiteAccuracies.length * 10) / 10 : 100,
+      black: blackAccuracies.length > 0 ? Math.round(blackAccuracies.reduce((a, b) => a + b, 0) / blackAccuracies.length * 10) / 10 : 100,
     }
 
     const analysisData = {

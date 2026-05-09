@@ -32,3 +32,7 @@ public/stockfish/*.js
 public/stockfish/*.wasm
 /stockfish.exe
 /stockfish
+
+# SHM identity and data
+shm_identity.json
+shm/

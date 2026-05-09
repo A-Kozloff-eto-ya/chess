@@ -28,6 +28,8 @@
               :board-config="boardConfig"
               :player-color="playerColor"
               :reactive-config="true"
+              :board-theme="settings.boardTheme"
+              :piece-theme="settings.pieceTheme"
               @board-created="handleBoardCreated"
               @move="handleBoardMove"
             />
@@ -148,6 +150,7 @@ const toast = useToast()
 const showInviteModal = ref(false)
 const { isOnline, getStatus, fetchOnlineStatus } = useOnlineUsers()
 const { resolveAvatar } = useAvatar()
+const { settings } = useSettings()
 
 const gameContainer = ref<HTMLElement | null>(null)
 const { boardSize, isMobile } = useBoardSize(gameContainer)

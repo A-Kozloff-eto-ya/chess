@@ -18,6 +18,8 @@
               :board-config="boardConfig"
               :player-color="playerColor"
               :reactive-config="true"
+              :board-theme="settings.boardTheme"
+              :piece-theme="settings.pieceTheme"
               @board-created="onBoardCreated"
               @move="onBoardMove"
               @check="onCheck"
@@ -73,6 +75,7 @@ import { parseTimeControl } from '~/../shared/constants'
 
 const DEFAULT_TC = parseTimeControl('10+0')
 const { t } = useI18n()
+const { settings } = useSettings()
 const sounds = useSounds()
 
 const { user } = useUserSession()
@@ -106,8 +109,8 @@ const updateFen = () => {
   if (boardApi.value) currentFen.value = boardApi.value.getFen()
 }
 
-const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock } = useChessClock()
-resetClock(DEFAULT_TC.base)
+const { whiteTime, blackTime, formatTime, startTimer, stopTimer, resetClock, applyIncrement } = useChessClock()
+resetClock(DEFAULT_TC.base, DEFAULT_TC.increment)
 
 const myTime = computed(() => playerColor.value === 'white' ? whiteTime.value : blackTime.value)
 const opponentTime = computed(() => playerColor.value === 'white' ? blackTime.value : whiteTime.value)
@@ -137,6 +140,9 @@ const onBoardMove = (move: { from: string; to: string; promotion?: string; san: 
   } else {
     sounds.move()
   }
+
+  const movedColor: 'white' | 'black' = boardApi.value?.getTurnColor() === 'w' ? 'black' : 'white'
+  applyIncrement(movedColor)
 
   nextTick(updateFen)
 
@@ -282,8 +288,7 @@ const resetGame = () => {
   gameOver.value = false
   gameOverReason.value = ''
   boardKey.value++
-  resetClock(DEFAULT_TC.base)
-  isAiThinking.value = false
+  resetClock(DEFAULT_TC.base, DEFAULT_TC.increment)
   boardApi.value = null
   currentFen.value = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 }

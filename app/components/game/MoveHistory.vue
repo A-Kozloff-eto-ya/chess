@@ -40,21 +40,13 @@
 </template>
 
 <script setup lang="ts">
+import { pieceIcon } from '~/utils/chess-ui'
+
 const props = defineProps<{ moves: (string | { san: string })[] }>()
 
 const scrollContainer = ref<HTMLElement | null>(null)
 
 const toSan = (m: string | { san: string }): string => typeof m === 'string' ? m : m.san
-
-const pieceIcon = (san: string): string => {
-  if (san.startsWith('N')) return '♞'
-  if (san.startsWith('B')) return '♝'
-  if (san.startsWith('R')) return '♜'
-  if (san.startsWith('Q')) return '♛'
-  if (san.startsWith('K') || san.startsWith('O')) return '♚'
-  if (/^[a-h]/.test(san)) return '♟'
-  return ''
-}
 
 const pairedMoves = computed(() => {
   const pairs: { white: { san: string; isLast: boolean }; black?: { san: string; isLast: boolean } }[] = []

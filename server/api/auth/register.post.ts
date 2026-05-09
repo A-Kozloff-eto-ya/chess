@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   ).then(r => r[0])
 
   if (existing) {
-    throw createError({ statusCode: 409, statusMessage: 'User with this email or username already exists' })
+    throw createError({ statusCode: 409, statusMessage: 'If registration is possible, a confirmation will be sent to your email.' })
   }
 
   const passwordHash = await hashPassword(password)

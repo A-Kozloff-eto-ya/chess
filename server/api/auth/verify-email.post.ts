@@ -1,13 +1,20 @@
+import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { users, emailVerifications } from '../../db/schema'
 
-export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const token = query.token as string
+const verifySchema = z.object({
+  token: z.string().min(1),
+})
 
-  if (!token) {
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const parsed = verifySchema.safeParse(body)
+
+  if (!parsed.success) {
     throw createError({ statusCode: 400, statusMessage: 'Missing token' })
   }
+
+  const { token } = parsed.data
 
   const verification = await db.select().from(emailVerifications).where(eq(emailVerifications.token, token)).then(r => r[0])
   if (!verification) {

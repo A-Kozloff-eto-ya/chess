@@ -31,18 +31,13 @@
 </template>
 
 <script setup lang="ts">
-const { loggedIn, user, clear: clearSession } = useUserSession()
+const { loggedIn, user } = useUserSession()
 const { t } = useI18n()
 const showLogin = ref(false)
 const drawerOpen = ref(false)
-const toast = useToast()
+const { logout } = useAuth()
 
-const handleLogout = async () => {
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  await clearSession()
-  toast.add({ title: t('signedOut'), color: 'success' })
-  await navigateTo('/')
-}
+const handleLogout = () => logout()
 
 const menuItems = computed(() => [
   [{ label: t('profile'), icon: 'i-lucide-user', onSelect: () => navigateTo('/profile/me') }],

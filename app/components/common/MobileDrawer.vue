@@ -91,21 +91,15 @@ const open = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const { loggedIn, user, clear: clearSession } = useUserSession()
+const { loggedIn, user } = useUserSession()
 const { t } = useI18n()
-const toast = useToast()
 const showLogin = ref(false)
+const { logout } = useAuth()
 
 const navItems = computed(() => [
   { to: '/', icon: 'i-lucide-home', label: t('home') },
   { to: '/play-ai', icon: 'i-lucide-bot', label: t('playAI') },
 ])
 
-const handleLogout = async () => {
-  open.value = false
-  await $fetch('/api/auth/logout', { method: 'POST' })
-  await clearSession()
-  toast.add({ title: t('signedOut'), color: 'success' })
-  await navigateTo('/')
-}
+const handleLogout = () => logout(() => { open.value = false })
 </script>

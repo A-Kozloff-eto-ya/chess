@@ -3,6 +3,7 @@ export function useChessClock() {
   const blackTime = ref(0)
   let timerInterval: ReturnType<typeof setInterval> | null = null
   let lastTick: number = 0
+  let incrementMs = 0
 
   const formatTime = (ms: number) => {
     if (ms <= 0) return '0:00.0'
@@ -14,6 +15,15 @@ export function useChessClock() {
       return `${minutes}:${seconds.toString().padStart(2, '0')}.${tenths}`
     }
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const applyIncrement = (color: 'white' | 'black') => {
+    if (incrementMs <= 0) return
+    if (color === 'white') {
+      whiteTime.value += incrementMs
+    } else {
+      blackTime.value += incrementMs
+    }
   }
 
   const startTimer = (
@@ -47,8 +57,9 @@ export function useChessClock() {
     }
   }
 
-  const resetClock = (baseMs: number) => {
+  const resetClock = (baseMs: number, incMs: number = 0) => {
     stopTimer()
+    incrementMs = incMs
     whiteTime.value = baseMs
     blackTime.value = baseMs
   }
@@ -62,5 +73,6 @@ export function useChessClock() {
     startTimer,
     stopTimer,
     resetClock,
+    applyIncrement,
   }
 }

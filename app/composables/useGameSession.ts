@@ -157,7 +157,7 @@ export function useGameSession(gameId: string) {
         gameOver.value = true
       }
       const tc = parseTimeControl(data.timeControl || '10+0')
-      resetClock(tc.base)
+      resetClock(tc.base, tc.increment)
     } catch {
       toast.add({ title: t('gameNotFound'), color: 'error' })
       navigateTo('/')

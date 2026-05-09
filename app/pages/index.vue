@@ -56,16 +56,6 @@
           @click.stop="showJoinModal = true" />
       </UCard>
 
-      <!-- <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-eye" class="size-5 text-highlighted" />
-            <span class="font-semibold">{{ $t('watchGames') }}</span>
-          </div>
-        </template>
-        <p class="text-sm text-muted">{{ $t('spectateFriends') }}</p>
-      </UCard> -->
-
       <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }"
         @click="loggedIn ? navigateTo('/import') : showLoginPrompt()">
         <template #header>
@@ -77,15 +67,6 @@
         <p class="text-sm text-muted">{{ $t('importPgnDesc') }}</p>
       </UCard>
 
-      <!-- <UCard class="cursor-pointer transition-transform hover:scale-105" :class="{ 'opacity-50': !loggedIn }">
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-trophy" class="size-5 text-primary" />
-            <span class="font-semibold">{{ $t('tournaments') }}</span>
-          </div>
-        </template>
-        <p class="text-sm text-muted">{{ $t('comingSoon') }}</p>
-      </UCard> -->
     </div>
 
 
@@ -214,22 +195,17 @@ const activeOptions = computed(() => {
   return TIME_CONTROL_CATEGORIES.find(c => c.key === activeCategory.value)?.options ?? ['10+0']
 })
 
+const { joinByCode: joinByCodeFn } = useGameJoin()
+
 const joinByCode = async () => {
   if (joinCode.value.length !== 6) return
   joining.value = true
-  try {
-    const { gameId } = await $fetch('/api/games/join', {
-      method: 'POST',
-      body: { inviteCode: joinCode.value.toUpperCase() },
-    })
+  const gameId = await joinByCodeFn(joinCode.value)
+  if (gameId) {
     showJoinModal.value = false
     navigateTo(`/play/${gameId}`)
-  } catch (e) {
-    const err = e as FetchError
-    toast.add({ title: err.data?.statusMessage || t('failedToJoin'), color: 'error' })
-  } finally {
-    joining.value = false
   }
+  joining.value = false
 }
 
 const showLoginPrompt = () => {

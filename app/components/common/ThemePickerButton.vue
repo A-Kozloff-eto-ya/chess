@@ -21,11 +21,11 @@ function getColor(color: string, shade: number) {
   <UButton
     size="sm"
     color="neutral"
-    variant="outline"
+    variant="ghost"
     :icon="icon"
     :label="label"
-    class="capitalize ring-default rounded-sm text-[11px]"
-    :class="[selected ? 'bg-elevated' : 'hover:bg-elevated/50']"
+    class="capitalize rounded-sm text-[11px] bg-elevated"
+    :class="[selected ? 'ring-2 ring-primary' : '']"
   >
     <template v-if="chip || !!slots.leading" #leading>
       <slot name="leading">

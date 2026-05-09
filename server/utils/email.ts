@@ -31,3 +31,24 @@ export async function sendEmail(to: string, subject: string, html: string) {
 export function getBaseUrl() {
   return config.public.appUrl || 'http://localhost:3000'
 }
+
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export async function retrySendEmail(to: string, subject: string, html: string, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await sendEmail(to, subject, html)
+      return
+    } catch (e) {
+      if (i === retries - 1) throw e
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+    }
+  }
+}

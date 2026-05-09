@@ -67,11 +67,25 @@ async function updateRatings(
     return
   }
 
+  const whiteGamesCount = await db.select({ id: games.id })
+    .from(games)
+    .where(and(
+      or(eq(games.whitePlayerId, whitePlayerId), eq(games.blackPlayerId, whitePlayerId)),
+      eq(games.status, 'completed')
+    )).then(r => r.length)
+
+  const blackGamesCount = await db.select({ id: games.id })
+    .from(games)
+    .where(and(
+      or(eq(games.whitePlayerId, blackPlayerId), eq(games.blackPlayerId, blackPlayerId)),
+      eq(games.status, 'completed')
+    )).then(r => r.length)
+
   const whiteResult: 1 | 0.5 | 0 = result === '1-0' ? 1 : result === '0-1' ? 0 : 0.5
   const blackResult: 1 | 0.5 | 0 = result === '0-1' ? 1 : result === '1-0' ? 0 : 0.5
 
-  const newWhiteRating = calculateNewRating(whiteRow.rating ?? 1200, blackRow.rating ?? 1200, whiteResult)
-  const newBlackRating = calculateNewRating(blackRow.rating ?? 1200, whiteRow.rating ?? 1200, blackResult)
+  const newWhiteRating = calculateNewRating(whiteRow.rating ?? 1200, blackRow.rating ?? 1200, whiteResult, whiteGamesCount)
+  const newBlackRating = calculateNewRating(blackRow.rating ?? 1200, whiteRow.rating ?? 1200, blackResult, blackGamesCount)
 
   try {
     await db.update(users).set({ rating: newWhiteRating }).where(eq(users.id, whitePlayerId))
@@ -255,112 +269,117 @@ export default defineWebSocketHandler({
       case 'move': {
         const gameId = msg.gameId!
         const move = msg.move!
-        const room = getGameRoom(gameId)
-        if (!room) {
-          peer.send(JSON.stringify({ type: 'error', message: 'Room not found' }))
-          return
-        }
-        if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) {
-          peer.send(JSON.stringify({ type: 'error', message: 'Not your game' }))
-          return
-        }
 
-        const turn = room.chess.turn() === 'w' ? 'white' : 'black'
-        const myColor = room.whitePlayerId === userId ? 'white' : 'black'
+        await withRoomLock(gameId, async () => {
+          const room = getGameRoom(gameId)
+          if (!room) {
+            peer.send(JSON.stringify({ type: 'error', message: 'Room not found' }))
+            return
+          }
+          if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) {
+            peer.send(JSON.stringify({ type: 'error', message: 'Not your game' }))
+            return
+          }
 
-        if (turn !== myColor) {
-          peer.send(JSON.stringify({ type: 'move_rejected', reason: 'Not your turn', fen: room.chess.fen() }))
-          return
-        }
+          const turn = room.chess.turn() === 'w' ? 'white' : 'black'
+          const myColor = room.whitePlayerId === userId ? 'white' : 'black'
 
-        const result = validateMove(room.chess.fen(), move.from, move.to, move.promotion)
-        if (!result.valid) {
-          peer.send(JSON.stringify({ type: 'move_rejected', reason: result.error, fen: room.chess.fen() }))
-          return
-        }
+          if (turn !== myColor) {
+            peer.send(JSON.stringify({ type: 'move_rejected', reason: 'Not your turn', fen: room.chess.fen() }))
+            return
+          }
 
-        room.chess.move({ from: move.from, to: move.to, promotion: move.promotion })
-        room.moveList.push({ from: move.from, to: move.to, promotion: move.promotion, san: result.move.san })
+          const result = validateMove(room.chess.fen(), move.from, move.to, move.promotion)
+          if (!result.valid) {
+            peer.send(JSON.stringify({ type: 'move_rejected', reason: result.error, fen: room.chess.fen() }))
+            return
+          }
 
-        const now = Date.now()
-        if (myColor === 'white') {
-          room.whiteTime -= (now - room.lastMoveAt)
-          room.whiteTime += room.timeControl.increment
-        } else {
-          room.blackTime -= (now - room.lastMoveAt)
-          room.blackTime += room.timeControl.increment
-        }
-        room.lastMoveAt = now
+          room.chess.move({ from: move.from, to: move.to, promotion: move.promotion })
+          room.moveList.push({ from: move.from, to: move.to, promotion: move.promotion, san: result.move.san })
+          room.drawOfferedBy = null
 
-        const flaggedPlayer = room.whiteTime <= 0 ? 'white' : room.blackTime <= 0 ? 'black' : null
-        if (flaggedPlayer) {
-          const flagResult = flaggedPlayer === 'white' ? '0-1' : '1-0'
-          const flagPayload = JSON.stringify({ type: 'game_over', gameId, result: flagResult, reason: 'timeout' })
-          peer.publish(`game:${gameId}`, flagPayload)
-          peer.send(flagPayload)
-          room.status = 'completed'
-          try {
-            await db.update(games).set({
-              status: 'completed', result: flagResult, endedAt: new Date(),
-              pgn: generatePgn(room.moveList.map((m: GameMove) => m.san)),
-              whiteTimeMs: room.whiteTime, blackTimeMs: room.blackTime, lastMoveAt: new Date(room.lastMoveAt),
-            }).where(eq(games.id, Number(gameId)))
-          } catch (e) { console.error('[WS] Failed to save timeout:', e) }
-          await updateRatings(room.whitePlayerId, room.blackPlayerId, flagResult)
-          return
-        }
+          const now = Date.now()
+          if (myColor === 'white') {
+            room.whiteTime -= (now - room.lastMoveAt)
+            room.whiteTime += room.timeControl.increment
+          } else {
+            room.blackTime -= (now - room.lastMoveAt)
+            room.blackTime += room.timeControl.increment
+          }
+          room.lastMoveAt = now
 
-        const statePayload = JSON.stringify({
-          type: 'state_update',
-          gameId,
-          fen: room.chess.fen(),
-          moveCount: room.moveList.length,
-          lastMove: { from: move.from, to: move.to, san: result.move.san, promotion: move.promotion, captured: result.move.captured },
-          turn: room.chess.turn() === 'w' ? 'white' as const : 'black' as const,
-          whiteTime: room.whiteTime,
-          blackTime: room.blackTime,
-          isCheck: room.chess.inCheck(),
+          const flaggedPlayer = room.whiteTime <= 0 ? 'white' : room.blackTime <= 0 ? 'black' : null
+          if (flaggedPlayer) {
+            const flagResult = flaggedPlayer === 'white' ? '0-1' : '1-0'
+            const flagPayload = JSON.stringify({ type: 'game_over', gameId, result: flagResult, reason: 'timeout' })
+            peer.publish(`game:${gameId}`, flagPayload)
+            peer.send(flagPayload)
+            room.status = 'completed'
+            try {
+              await db.update(games).set({
+                status: 'completed', result: flagResult, endedAt: new Date(),
+                pgn: generatePgn(room.moveList.map((m: GameMove) => m.san)),
+                whiteTimeMs: room.whiteTime, blackTimeMs: room.blackTime, lastMoveAt: new Date(room.lastMoveAt),
+              }).where(eq(games.id, Number(gameId)))
+            } catch (e) { console.error('[WS] Failed to save timeout:', e) }
+            await updateRatings(room.whitePlayerId, room.blackPlayerId, flagResult)
+            return
+          }
+
+          const statePayload = JSON.stringify({
+            type: 'state_update',
+            gameId,
+            fen: room.chess.fen(),
+            moveCount: room.moveList.length,
+            lastMove: { from: move.from, to: move.to, san: result.move.san, promotion: move.promotion, captured: result.move.captured },
+            turn: room.chess.turn() === 'w' ? 'white' as const : 'black' as const,
+            whiteTime: room.whiteTime,
+            blackTime: room.blackTime,
+            isCheck: room.chess.inCheck(),
+          })
+
+          peer.publish(`game:${gameId}`, statePayload)
+          peer.send(statePayload)
+
+          await persistRoomState(room)
+
+          const clockPayload = JSON.stringify({
+            type: 'clock_sync',
+            gameId,
+            whiteTime: room.whiteTime,
+            blackTime: room.blackTime,
+          })
+          peer.publish(`game:${gameId}`, clockPayload)
+          peer.send(clockPayload)
+
+          const gameState = isGameOver(room.chess.fen())
+          if (gameState.gameOver) {
+            let gameResult = '*'
+            let reason = 'unknown'
+            if (gameState.checkmate) { gameResult = myColor === 'white' ? '1-0' : '0-1'; reason = 'checkmate' }
+            else if (gameState.stalemate) { gameResult = '1/2-1/2'; reason = 'stalemate' }
+            else if (gameState.insufficientMaterial) { gameResult = '1/2-1/2'; reason = 'insufficient_material' }
+            else if (gameState.threefoldRepetition) { gameResult = '1/2-1/2'; reason = 'threefold_repetition' }
+            else if (gameState.draw) { gameResult = '1/2-1/2'; reason = 'draw' }
+
+            const pgn = generatePgn(room.moveList.map((m: GameMove) => m.san))
+            const overPayload = JSON.stringify({ type: 'game_over', gameId, result: gameResult, reason })
+
+            peer.publish(`game:${gameId}`, overPayload)
+            peer.send(overPayload)
+
+            room.status = 'completed'
+            try {
+              await db.update(games).set({
+                pgn, result: gameResult, status: 'completed', endedAt: new Date(),
+                whiteTimeMs: room.whiteTime, blackTimeMs: room.blackTime, lastMoveAt: new Date(room.lastMoveAt),
+              }).where(eq(games.id, Number(gameId)))
+            } catch (e) { console.error('[WS] Failed to save game result:', e) }
+            await updateRatings(room.whitePlayerId, room.blackPlayerId, gameResult)
+          }
         })
 
-        peer.publish(`game:${gameId}`, statePayload)
-        peer.send(statePayload)
-
-        await persistRoomState(room)
-
-        const clockPayload = JSON.stringify({
-          type: 'clock_sync',
-          gameId,
-          whiteTime: room.whiteTime,
-          blackTime: room.blackTime,
-        })
-        peer.publish(`game:${gameId}`, clockPayload)
-        peer.send(clockPayload)
-
-        const gameState = isGameOver(room.chess.fen())
-        if (gameState.gameOver) {
-          let gameResult = '*'
-          let reason = 'unknown'
-          if (gameState.checkmate) { gameResult = myColor === 'white' ? '1-0' : '0-1'; reason = 'checkmate' }
-          else if (gameState.stalemate) { gameResult = '1/2-1/2'; reason = 'stalemate' }
-          else if (gameState.insufficientMaterial) { gameResult = '1/2-1/2'; reason = 'insufficient_material' }
-          else if (gameState.threefoldRepetition) { gameResult = '1/2-1/2'; reason = 'threefold_repetition' }
-          else if (gameState.draw) { gameResult = '1/2-1/2'; reason = 'draw' }
-
-          const pgn = generatePgn(room.moveList.map((m: GameMove) => m.san))
-          const overPayload = JSON.stringify({ type: 'game_over', gameId, result: gameResult, reason })
-
-          peer.publish(`game:${gameId}`, overPayload)
-          peer.send(overPayload)
-
-          room.status = 'completed'
-          try {
-            await db.update(games).set({
-              pgn, result: gameResult, status: 'completed', endedAt: new Date(),
-              whiteTimeMs: room.whiteTime, blackTimeMs: room.blackTime, lastMoveAt: new Date(room.lastMoveAt),
-            }).where(eq(games.id, Number(gameId)))
-          } catch (e) { console.error('[WS] Failed to save game result:', e) }
-          await updateRatings(room.whitePlayerId, room.blackPlayerId, gameResult)
-        }
         break
       }
 
@@ -368,6 +387,10 @@ export default defineWebSocketHandler({
         const gameId = msg.gameId!
         const room = getGameRoom(gameId)
         if (!room) return
+        if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) {
+          peer.send(JSON.stringify({ type: 'error', message: 'Not your game' }))
+          return
+        }
         const result = room.whitePlayerId === userId ? '0-1' : '1-0'
         const payload = JSON.stringify({ type: 'game_over', gameId, result, reason: 'resignation' })
         peer.publish(`game:${gameId}`, payload)
@@ -388,6 +411,10 @@ export default defineWebSocketHandler({
         const gameId = msg.gameId!
         const room = getGameRoom(gameId)
         if (!room) return
+        if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) {
+          peer.send(JSON.stringify({ type: 'error', message: 'Not your game' }))
+          return
+        }
         if (room.moveList.length > 0) {
           peer.send(JSON.stringify({ type: 'error', message: 'Cannot abort after first move' }))
           return
@@ -405,6 +432,11 @@ export default defineWebSocketHandler({
       }
 
       case 'offer_draw': {
+        const gameId = msg.gameId!
+        const room = getGameRoom(gameId)
+        if (!room) return
+        if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) return
+        room.drawOfferedBy = userId
         peer.publish(`game:${msg.gameId}`, JSON.stringify({ type: 'draw_offered', by: pd.username }))
         break
       }
@@ -413,6 +445,12 @@ export default defineWebSocketHandler({
         const gameId = msg.gameId!
         const room = getGameRoom(gameId)
         if (!room) return
+        if (room.whitePlayerId !== userId && room.blackPlayerId !== userId) return
+        if (!room.drawOfferedBy || room.drawOfferedBy === userId) {
+          peer.send(JSON.stringify({ type: 'error', message: 'No draw offer to accept' }))
+          return
+        }
+        room.drawOfferedBy = null
         const payload = JSON.stringify({ type: 'game_over', gameId, result: '1/2-1/2', reason: 'agreement' })
         peer.publish(`game:${gameId}`, payload)
         peer.send(payload)
@@ -430,6 +468,8 @@ export default defineWebSocketHandler({
 
       case 'decline_draw': {
         const gameId = msg.gameId!
+        const room = getGameRoom(gameId)
+        if (room) room.drawOfferedBy = null
         peer.publish(`game:${gameId}`, JSON.stringify({ type: 'draw_declined' }))
         break
       }

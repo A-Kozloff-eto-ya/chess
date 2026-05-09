@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import type { AnalyzedMove } from '~/types'
+import { pieceIcon, qualityClass, qualitySymbol } from '~/utils/chess-ui'
 
 const props = defineProps<{
   analyzedMoves: AnalyzedMove[]
@@ -55,17 +56,6 @@ const props = defineProps<{
 defineEmits<{ goToMove: [index: number] }>()
 
 const scrollContainer = ref<HTMLElement | null>(null)
-
-const pieceIcon = (san?: string): string => {
-  if (!san) return ''
-  if (san.startsWith('N')) return '♞'
-  if (san.startsWith('B')) return '♝'
-  if (san.startsWith('R')) return '♜'
-  if (san.startsWith('Q')) return '♛'
-  if (san.startsWith('K') || san.startsWith('O')) return '♚'
-  if (/^[a-h]/.test(san)) return '♟'
-  return ''
-}
 
 const pairedMoves = computed(() => {
   const pairs: {
@@ -84,30 +74,6 @@ const pairedMoves = computed(() => {
   }
   return pairs
 })
-
-const qualitySymbol = (quality?: string): string => {
-  switch (quality) {
-    case 'brilliant': return '!!'
-    case 'best': return '!'
-    case 'good': return '!?'  
-    case 'inaccuracy': return '?!'
-    case 'mistake': return '?'
-    case 'blunder': return '??'
-    default: return ''
-  }
-}
-
-const qualityClass = (quality?: string): string => {
-  switch (quality) {
-    case 'brilliant': return 'text-emerald-400'
-    case 'best': return 'text-success'
-    case 'good': return 'text-sky-400'
-    case 'inaccuracy': return 'text-amber-400'
-    case 'mistake': return 'text-orange-400'
-    case 'blunder': return 'text-error'
-    default: return 'text-transparent'
-  }
-}
 
 const moveClass = (moveIdx: number) => {
   return moveIdx + 1 === props.currentMoveIndex ? 'bg-accented' : 'hover:bg-elevated/50'

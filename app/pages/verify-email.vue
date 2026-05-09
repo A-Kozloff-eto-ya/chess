@@ -37,7 +37,7 @@ onMounted(async () => {
   }
 
   try {
-    await $fetch('/api/auth/verify-email', { params: { token } })
+    await $fetch('/api/auth/verify-email', { method: 'POST', body: { token } })
     status.value = 'success'
   } catch {
     status.value = 'failed'

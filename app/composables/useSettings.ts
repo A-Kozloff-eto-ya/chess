@@ -1,3 +1,6 @@
+export type BoardTheme = 'brown' | 'blue' | 'green' | 'purple' | 'ic'
+export type PieceTheme = 'cburnett' | 'tatiana' | 'maestro' | 'pirouetti'
+
 export interface AppSettings {
   soundsEnabled: boolean
   soundsVolume: number
@@ -6,6 +9,8 @@ export interface AppSettings {
   neutral: string
   radius: number
   colorMode: 'light' | 'dark' | 'system'
+  boardTheme: BoardTheme
+  pieceTheme: PieceTheme
 }
 
 const DEFAULTS: AppSettings = {
@@ -16,6 +21,8 @@ const DEFAULTS: AppSettings = {
   neutral: 'slate',
   radius: 0.25,
   colorMode: 'system',
+  boardTheme: 'brown',
+  pieceTheme: 'cburnett',
 }
 
 let initialized = false

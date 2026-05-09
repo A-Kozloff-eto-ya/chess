@@ -18,6 +18,7 @@ export interface GameRoom {
   peers: Map<number, { send: (data: string) => void }>
   rematchOfferedBy: number | null
   rematchAccepted: boolean
+  drawOfferedBy: number | null
   disconnectTimers: Map<number, ReturnType<typeof setTimeout>>
 }
 
@@ -44,6 +45,7 @@ export function createGameRoom(gameId: string, timeControl: string = '10+0'): Ga
     peers: new Map(),
     rematchOfferedBy: null,
     rematchAccepted: false,
+    drawOfferedBy: null,
     disconnectTimers: new Map(),
   }
   gameRooms.set(gameId, room)
@@ -147,6 +149,7 @@ export async function restoreRoomsFromDB(): Promise<void> {
         peers: new Map(),
         rematchOfferedBy: null,
         rematchAccepted: false,
+        drawOfferedBy: null,
         disconnectTimers: new Map(),
       }
 

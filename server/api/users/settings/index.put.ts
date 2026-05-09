@@ -10,6 +10,8 @@ const SettingsSchema = z.object({
   neutral: z.string().optional(),
   radius: z.number().optional(),
   colorMode: z.enum(['light', 'dark', 'system']).optional(),
+  boardTheme: z.enum(['brown', 'blue', 'green', 'purple', 'ic']).optional(),
+  pieceTheme: z.enum(['cburnett', 'tatiana', 'maestro', 'pirouetti']).optional(),
 })
 
 export default defineEventHandler(async (event) => {

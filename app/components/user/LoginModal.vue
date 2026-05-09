@@ -26,13 +26,13 @@
               </template>
             </UButton>
           </UTooltip>
-          <UTooltip :text="$t('continueWithGoogle')">
+          <!-- <UTooltip :text="$t('continueWithGoogle')">
             <UButton variant="outline" size="xl" @click="oauthLogin('google')">
               <template #leading>
                 <img src="/Google__G__logo.svg" alt="Google" class="size-5" />
               </template>
             </UButton>
-          </UTooltip>
+          </UTooltip> -->
           <UTooltip :text="$t('continueWithYandex')">
             <UButton variant="outline" size="xl" @click="oauthLogin('yandex')">
               <template #leading>
@@ -43,7 +43,7 @@
           <UTooltip :text="$t('continueWithDiscord')">
             <UButton variant="outline" size="xl" @click="oauthLogin('discord')">
               <template #leading>
-                <img src="/Discord_logo_svg.svg" alt="Discord" class="size-5" />
+                <img src="/Discord_icon.svg" alt="Discord" class="size-5" />
               </template>
             </UButton>
           </UTooltip>
