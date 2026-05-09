@@ -265,8 +265,8 @@
           <div class="flex items-center gap-2">
             <UButton v-if="!isLinked(prov.id)" :label="$t('link')" size="xs" variant="outline" @click="onLinkProvider(prov.id)" />
             <template v-else>
-              <USwitch :model-value="isVisible(prov.id)" size="xs" @update:model-value="onToggleVisibility(prov.id, $event)" />
-              <span class="text-[10px] text-muted w-10">{{ isVisible(prov.id) ? $t('public') : $t('private') }}</span>
+              <USwitch v-if="prov.hasProfile" :model-value="isVisible(prov.id)" size="xs" @update:model-value="onToggleVisibility(prov.id, $event)" />
+              <span v-if="prov.hasProfile" class="text-[10px] text-muted w-10">{{ isVisible(prov.id) ? $t('public') : $t('private') }}</span>
               <UButton :label="$t('unlink')" size="xs" variant="ghost" color="error" @click="onUnlinkProvider(prov.id)" />
             </template>
           </div>
@@ -411,10 +411,10 @@ const setLanguage = (code: 'en' | 'ru') => {
 const { data: linkedAccounts, refresh: refreshAccounts } = useFetch<{ provider: string; username: string | null; profileUrl: string | null; visible: boolean }[]>('/api/auth/linked-accounts')
 
 const providerList = [
-  { id: 'github', icon: 'i-logos-github-icon', label: 'GitHub' },
-  { id: 'google', icon: 'i-logos-google-icon', label: 'Google' },
-  { id: 'discord', icon: 'i-logos-discord-icon', label: 'Discord' },
-  { id: 'yandex', icon: 'i-logos-yandex-ru', label: 'Yandex' },
+  { id: 'github', icon: 'i-logos-github-icon', label: 'GitHub', hasProfile: true },
+  { id: 'google', icon: 'i-logos-google-icon', label: 'Google', hasProfile: false },
+  { id: 'discord', icon: 'i-logos-discord-icon', label: 'Discord', hasProfile: true },
+  { id: 'yandex', icon: 'i-logos-yandex-ru', label: 'Yandex', hasProfile: false },
 ]
 
 const isLinked = (provider: string) => linkedAccounts.value?.some(a => a.provider === provider) ?? false

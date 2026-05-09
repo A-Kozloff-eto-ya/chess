@@ -16,6 +16,7 @@ export default defineOAuthDiscordEventHandler({
       username: user.global_name || user.username || `discord_${user.id}`,
       email: user.email || `${user.username}@discord.com`,
       avatar,
+      profileUrl: `https://discord.com/users/${user.id}`,
     })
   },
   onError(event, error) {

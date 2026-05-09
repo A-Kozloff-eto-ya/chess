@@ -15,5 +15,5 @@ export default defineEventHandler(async (event) => {
     and(eq(userOauthAccounts.userId, userId), eq(userOauthAccounts.visible, true))
   )
 
-  return accounts
+  return accounts.filter(acc => acc.profileUrl)
 })

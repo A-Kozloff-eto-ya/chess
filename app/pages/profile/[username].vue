@@ -22,15 +22,18 @@
           </p>
           <p v-if="profile.bio" class="mt-1 text-sm text-default">{{ profile.bio }}</p>
           <p class="text-sm text-muted">{{ $t('joined', { date: formatDate(profile.createdAt) }) }}</p>
-          <div v-if="socialAccounts.length" class="mt-2 flex gap-2">
-            <a v-for="acc in socialAccounts" :key="acc.provider" :href="acc.profileUrl || undefined"
-              target="_blank" rel="noopener noreferrer"
-              class="rounded-full bg-primary p-1.5 flex text-muted transition-colors hover:text-primary hover:bg-accented"
-              :title="socialIcon(acc.provider).label"
-            >
-              <UIcon :name="socialIcon(acc.provider).icon" class="size-4" />
-            </a>
-          </div>
+           <div v-if="socialAccounts.length" class="mt-2 flex gap-2">
+            <template v-for="acc in socialAccounts" :key="acc.provider">
+              <a v-if="acc.profileUrl"
+                :href="acc.profileUrl"
+                target="_blank" rel="noopener noreferrer"
+                class="rounded-full bg-elevated p-1.5 flex text-muted transition-colors hover:text-primary hover:bg-accented"
+                :title="socialIcon(acc.provider).label"
+              >
+                <img :src="socialIcon(acc.provider).icon" :alt="socialIcon(acc.provider).label" class="size-4" />
+              </a>
+            </template>
+           </div>
           <UButton v-if="isOwnProfile && !editing" :label="$t('editProfile')" icon="i-lucide-pencil" size="sm"
             variant="outline" class="mt-2" @click="startEditing" />
           <div v-if="isFriend" class="mt-2">
@@ -166,12 +169,12 @@ const socialAccounts = ref<{ provider: string; username: string | null; profileU
 
 const socialIcon = (provider: string) => {
   const map: Record<string, { icon: string; label: string }> = {
-    github: { icon: 'i-logos-github-icon', label: 'GitHub' },
-    google: { icon: 'i-logos-google-icon', label: 'Google' },
-    discord: { icon: 'i-logos-discord-icon', label: 'Discord' },
-    yandex: { icon: 'i-logos-yandex-ru', label: 'Yandex' },
+    github: { icon: '/Github_logo_svg.svg', label: 'GitHub' },
+    google: { icon: '/Google__G__logo.svg', label: 'Google' },
+    discord: { icon: '/Discord_icon.svg', label: 'Discord' },
+    yandex: { icon: '/Yandex_icon.svg', label: 'Yandex' },
   }
-  return map[provider] || { icon: 'i-lucide-link', label: provider }
+  return map[provider] || { icon: '/Github_logo_svg.svg', label: provider }
 }
 const addingFriend = ref(false)
 const removingFriend = ref(false)
